@@ -13,7 +13,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Application Code with Fixed Spacing and Layout Positioning
+# 2. Application Code with Dynamic Slider Badges & Scale Labels
 app_code = """
 <!DOCTYPE html>
 <html lang="en">
@@ -47,7 +47,6 @@ app_code = """
             -webkit-text-fill-color: transparent;
         }
 
-        /* Speech Bubble Tail pointing DOWN to robot */
         .speech-tail::after {
             content: '';
             position: absolute;
@@ -75,12 +74,10 @@ app_code = """
         <h1 class="text-6xl font-extrabold tracking-tight glow-title mb-2">FocusMate</h1>
         <p class="text-slate-400 text-lg mb-6">Your AI-Powered Deep Work Companion</p>
 
-        <!-- Speech Bubble sits ABOVE robot -->
         <div id="speech-bubble" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-200 to-pink-200 text-slate-900 font-bold text-xl px-8 py-4 rounded-2xl shadow-lg relative speech-tail mb-44">
             "Hi! Welcome to FocusMate!" ✨
         </div>
 
-        <!-- Button sits directly UNDER robot -->
         <button id="dive-btn" onclick="startFlightSequence()" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-xl px-10 py-4 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer">
             Let's Dive In! 🚀
         </button>
@@ -94,29 +91,55 @@ app_code = """
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 1. MIND DUMP -->
             <div class="glass-card rounded-2xl p-6 border-l-4 border-purple-400 md:col-span-2">
                 <label class="block text-purple-300 font-bold mb-2 text-lg">💬 1. AI Mind Dump</label>
                 <textarea id="input-mind" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-4 text-slate-100 focus:outline-none focus:border-purple-400" rows="3" placeholder="Vent your raw thoughts, doubts, or anxieties here..."></textarea>
             </div>
 
+            <!-- 2. TARGET HOURS -->
             <div class="glass-card rounded-2xl p-6 border-l-4 border-pink-400">
                 <label class="block text-pink-300 font-bold mb-2 text-lg">📚 2. Target Study Hours</label>
                 <input id="input-hours" type="number" min="1" max="12" value="3" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-pink-400">
             </div>
 
+            <!-- 3. SLEEP QUALITY SLIDER -->
             <div class="glass-card rounded-2xl p-6 border-l-4 border-sky-400">
-                <label class="block text-sky-300 font-bold mb-2 text-lg">😴 3. Sleep Quality Score (1-10)</label>
-                <input id="input-sleep" type="range" min="1" max="10" value="7" class="w-full accent-sky-400 cursor-pointer">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-sky-300 font-bold text-lg">😴 3. Sleep Quality Score</label>
+                    <span id="badge-sleep" class="bg-sky-500/20 text-sky-300 border border-sky-400/40 px-3 py-1 rounded-lg font-extrabold text-base">7 / 10</span>
+                </div>
+                <input id="input-sleep" type="range" min="1" max="10" value="7" oninput="updateSliderValue('sleep', this.value)" class="w-full accent-sky-400 cursor-pointer">
+                <div class="flex justify-between text-xs text-slate-400 mt-1">
+                    <span>1 (Poor)</span>
+                    <span>10 (Restful)</span>
+                </div>
             </div>
 
+            <!-- 4. TASK DIFFICULTY SLIDER -->
             <div class="glass-card rounded-2xl p-6 border-l-4 border-indigo-400">
-                <label class="block text-indigo-300 font-bold mb-2 text-lg">🎯 4. Task Difficulty (1-10)</label>
-                <input id="input-difficulty" type="range" min="1" max="10" value="6" class="w-full accent-indigo-400 cursor-pointer">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-indigo-300 font-bold text-lg">🎯 4. Task Difficulty</label>
+                    <span id="badge-difficulty" class="bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 px-3 py-1 rounded-lg font-extrabold text-base">6 / 10</span>
+                </div>
+                <input id="input-difficulty" type="range" min="1" max="10" value="6" oninput="updateSliderValue('difficulty', this.value)" class="w-full accent-indigo-400 cursor-pointer">
+                <div class="flex justify-between text-xs text-slate-400 mt-1">
+                    <span>1 (Easy)</span>
+                    <span>10 (Extreme)</span>
+                </div>
             </div>
 
+            <!-- 5. ENERGY LEVEL SLIDER -->
             <div class="glass-card rounded-2xl p-6 border-l-4 border-emerald-400">
-                <label class="block text-emerald-300 font-bold mb-2 text-lg">⚡ 5. Current Energy Level (1-10)</label>
-                <input id="input-energy" type="range" min="1" max="10" value="8" class="w-full accent-emerald-400 cursor-pointer">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-emerald-300 font-bold text-lg">⚡ 5. Current Energy Level</label>
+                    <span id="badge-energy" class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 px-3 py-1 rounded-lg font-extrabold text-base">8 / 10</span>
+                </div>
+                <input id="input-energy" type="range" min="1" max="10" value="8" oninput="updateSliderValue('energy', this.value)" class="w-full accent-emerald-400 cursor-pointer">
+                <div class="flex justify-between text-xs text-slate-400 mt-1">
+                    <span>1 (Exhausted)</span>
+                    <span>10 (Fully Charged)</span>
+                </div>
             </div>
         </div>
 
@@ -124,6 +147,7 @@ app_code = """
             ✨ Generate Focus Strategy ✨
         </button>
 
+        <!-- RESULTS SECTION -->
         <div id="strategy-result" class="hidden mt-10 space-y-6">
             <div class="glass-card rounded-3xl p-8 border border-purple-500/30">
                 <h3 class="text-2xl font-bold glow-title mb-4 text-center">🎯 Your Custom Focus Strategy</h3>
@@ -145,12 +169,12 @@ app_code = """
 
                 <div class="space-y-4">
                     <div class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-purple-400">
-                        <h4 class="font-bold text-purple-300">🧠 Mind Dump Analysis</h4>
-                        <p id="analysis-mind" class="text-slate-300 text-sm mt-1">Ready to turn thoughts into organized tasks.</p>
+                        <h4 class="font-bold text-purple-300">🧠 Mind Dump & Emotional Status</h4>
+                        <p id="analysis-mind" class="text-slate-300 text-sm mt-1"></p>
                     </div>
                     <div class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-emerald-400">
                         <h4 class="font-bold text-emerald-300">🚀 Recommended Roadmap</h4>
-                        <p id="analysis-roadmap" class="text-slate-300 text-sm mt-1">Start with low-friction tasks for 10 mins to build momentum.</p>
+                        <p id="analysis-roadmap" class="text-slate-300 text-sm mt-1"></p>
                     </div>
                 </div>
             </div>
@@ -158,6 +182,11 @@ app_code = """
     </div>
 
     <script>
+        // LIVE SLIDER BADGE UPDATER
+        function updateSliderValue(id, value) {
+            document.getElementById(`badge-${id}`).innerText = `${value} / 10`;
+        }
+
         const canvas = document.getElementById('stage');
         const ctx = canvas.getContext('2d');
 
@@ -192,7 +221,6 @@ app_code = """
             ctx.save();
             ctx.translate(x, y);
 
-            // Aura Glow
             const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, 90);
             grad.addColorStop(0, 'rgba(192, 132, 252, 0.35)');
             grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
@@ -201,7 +229,6 @@ app_code = """
             ctx.arc(0, 0, 90, 0, Math.PI * 2);
             ctx.fill();
 
-            // Antenna
             ctx.fillStyle = '#f472b6';
             ctx.beginPath();
             ctx.arc(0, -65, 8, 0, Math.PI * 2);
@@ -214,52 +241,44 @@ app_code = """
             ctx.lineTo(0, -42);
             ctx.stroke();
 
-            // Head
             ctx.fillStyle = '#c084fc';
             ctx.beginPath();
             ctx.roundRect(-45, -42, 90, 64, 20);
             ctx.fill();
 
-            // Visor
             ctx.fillStyle = '#1e1b2e';
             ctx.beginPath();
             ctx.roundRect(-35, -32, 70, 44, 12);
             ctx.fill();
 
-            // Glowing Eyes
             ctx.fillStyle = '#38bdf8';
             ctx.beginPath();
             ctx.arc(-16, -10, 7, 0, Math.PI * 2);
             ctx.arc(16, -10, 7, 0, Math.PI * 2);
             ctx.fill();
 
-            // Cheeks
             ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
             ctx.beginPath();
             ctx.arc(-22, 4, 5, 0, Math.PI * 2);
             ctx.arc(22, 4, 5, 0, Math.PI * 2);
             ctx.fill();
 
-            // Torso
             ctx.fillStyle = '#a855f7';
             ctx.beginPath();
             ctx.roundRect(-28, 28, 56, 40, 14);
             ctx.fill();
 
-            // Core Heart Badge
             ctx.fillStyle = '#f472b6';
             ctx.beginPath();
             ctx.arc(0, 48, 7, 0, Math.PI * 2);
             ctx.fill();
 
-            // Arms
             ctx.fillStyle = '#c084fc';
             ctx.beginPath();
             ctx.arc(-40, 42, 9, 0, Math.PI * 2);
             ctx.arc(40, 42, 9, 0, Math.PI * 2);
             ctx.fill();
 
-            // Legs & Boots
             ctx.fillStyle = '#8b5cf6';
             ctx.beginPath();
             ctx.roundRect(-20, 68, 14, 22, 6);
@@ -316,7 +335,6 @@ app_code = """
         }
         animate();
 
-        // Target position set clearly below speech bubble
         window.addEventListener('DOMContentLoaded', () => {
             gsap.to(robot, {
                 y: window.innerHeight / 2 + 30,
@@ -359,7 +377,7 @@ app_code = """
         function generateStrategy() {
             const sleep = parseInt(document.getElementById('input-sleep').value);
             const energy = parseInt(document.getElementById('input-energy').value);
-            const mind = document.getElementById('input-mind').value;
+            const mind = document.getElementById('input-mind').value.trim().toLowerCase();
 
             let capacity = Math.round(((sleep * 0.4) + (energy * 0.6)) * 10);
             let sprintTime = capacity > 70 ? 45 : capacity > 40 ? 25 : 15;
@@ -369,12 +387,28 @@ app_code = """
             document.getElementById('score-sprint').innerText = sprintTime + ' min';
             document.getElementById('score-rest').innerText = restTime + ' min';
 
-            if (mind.trim().length > 0) {
-                document.getElementById('analysis-mind').innerText = '"' + mind + '" → Clear priority extracted and queued.';
+            let emotionalFeedback = "";
+            let roadmapFeedback = "";
+
+            if (mind.includes('stress') || mind.includes('suffocat') || mind.includes('anxi') || mind.includes('overwhelmed')) {
+                emotionalFeedback = "I hear you. High mental pressure detected—take a deep breath. You don't have to finish everything right now, just focus on one micro-step.";
+                roadmapFeedback = "Since you're feeling overwhelmed, start with 5 minutes of super easy admin work (cleaning desktop, organizing notes) to lower cortisol before tackling hard tasks.";
+            } else if (mind.includes('bored') || mind.includes('tired') || mind.includes('lazy') || mind.includes('sleepy')) {
+                emotionalFeedback = "Low stimulation detected. Your brain is seeking dopamine and resisting deep effort.";
+                roadmapFeedback = "Use the '5-Minute Rule': commit to working for just 300 seconds. If you still feel bored, take a brisk walk, drink cold water, and change your work spot.";
+            } else if (mind.includes('distract') || mind.includes('phone') || mind.includes('social')) {
+                emotionalFeedback = "Attention fragmentation detected. External distractions are pulling your focus away.";
+                roadmapFeedback = "Put your phone in another room or turn on Do Not Disturb immediately. Run a short 15-minute high-intensity micro-sprint.";
+            } else if (mind.length > 0) {
+                emotionalFeedback = `Thoughts logged: "${mind}". Expressing mental chatter reduces cognitive load and frees up working memory!`;
+                roadmapFeedback = `Break down "${mind.substring(0, 30)}..." into 3 bite-sized steps and execute step 1 during your first ${sprintTime}-minute sprint.`;
             } else {
-                document.getElementById('analysis-mind').innerText = 'No mind dump provided. Proceeding with standard flow.';
+                emotionalFeedback = "No mental dump provided. Mind is clear and ready to work!";
+                roadmapFeedback = `Start your first ${sprintTime}-minute micro-sprint directly with your highest priority task.`;
             }
 
+            document.getElementById('analysis-mind').innerText = emotionalFeedback;
+            document.getElementById('analysis-roadmap').innerText = roadmapFeedback;
             document.getElementById('guide-text').innerText = '"Strategy calculated! Check your custom roadmap below."';
 
             const resultDiv = document.getElementById('strategy-result');
