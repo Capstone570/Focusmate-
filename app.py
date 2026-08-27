@@ -92,32 +92,33 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize Page State
+# Initialize Session State for Multi-Page Flow
 if 'page' not in st.session_state:
     st.session_state.page = 'welcome'
 
 # ------------------------------------------------------------------------------
-# 2. 3D MASCOT COMPONENT (THREE.JS)
+# 2. 3D MASCOT COMPONENT (THREE.JS - SAFE ESCAPED STRING)
 # ------------------------------------------------------------------------------
 def render_mascot(height=280):
-    threejs_code = f"""
+    threejs_code = """
     <!DOCTYPE html>
     <html>
     <head>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
         <style>
-            body {{ margin: 0; overflow: hidden; background: transparent; }}
-            canvas {{ width: 100%; height: 100%; display: block; }}
+            body { margin: 0; overflow: hidden; background: transparent; }
+            canvas { width: 100%; height: 100%; display: block; }
         </style>
     </head>
     <body>
     <script>
+        const heightVal = "HEIGHT_PLACEHOLDER";
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / {height}, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / heightVal, 0.1, 1000);
         camera.position.z = 6.5;
 
-        const renderer = new THREE.WebGLRenderer({{ alpha: true, antialias: true }});
-        renderer.setSize(window.innerWidth, {height});
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, heightVal);
         renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
@@ -136,17 +137,17 @@ def render_mascot(height=280):
 
         // Ditto-Style Soft Blob Body
         const bodyGeo = new THREE.SphereGeometry(1.3, 32, 32);
-        const bodyMat = new THREE.MeshStandardMaterial({{ 
+        const bodyMat = new THREE.MeshStandardMaterial({ 
             color: 0xc084fc, 
             roughness: 0.2, 
             metalness: 0.1
-        }});
+        });
         const body = new THREE.Mesh(bodyGeo, bodyMat);
         robotGroup.add(body);
 
         // Eyes
         const eyeGeo = new THREE.SphereGeometry(0.12, 16, 16);
-        const eyeMat = new THREE.MeshBasicMaterial({{ color: 0x0f172a }});
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
         
         const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
         eyeLeft.position.set(-0.35, 0.2, 1.2);
@@ -158,7 +159,7 @@ def render_mascot(height=280):
 
         // Smile
         const mouthGeo = new THREE.TorusGeometry(0.15, 0.03, 16, 100, Math.PI);
-        const mouthMat = new THREE.MeshBasicMaterial({{ color: 0x0f172a }});
+        const mouthMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
         const mouth = new THREE.Mesh(mouthGeo, mouthMat);
         mouth.position.set(0, -0.1, 1.22);
         mouth.rotation.x = Math.PI;
@@ -177,13 +178,13 @@ def render_mascot(height=280):
             robotGroup.scale.x = 1 + Math.sin(t * 2.5) * 0.03;
             robotGroup.scale.y = 1 - Math.sin(t * 2.5) * 0.03;
 
-            if (Math.sin(t * 3.5) > 0.96) {{
+            if (Math.sin(t * 3.5) > 0.96) {
                 eyeLeft.scale.y = 0.1;
                 eyeRight.scale.y = 0.1;
-            }} else {{
+            } else {
                 eyeLeft.scale.y = 1;
                 eyeRight.scale.y = 1;
-            }}
+            }
 
             renderer.render(scene, camera);
         }
@@ -191,7 +192,8 @@ def render_mascot(height=280):
     </script>
     </body>
     </html>
-    """
+    """.replace("HEIGHT_PLACEHOLDER", str(height))
+    
     components.html(threejs_code, height=height)
 
 # ------------------------------------------------------------------------------
@@ -221,7 +223,6 @@ if st.session_state.page == 'welcome':
 # PAGE 2: WORKSPACE (5 FLOATING FEATURES + GUIDING MASCOT)
 # ------------------------------------------------------------------------------
 elif st.session_state.page == 'workspace':
-    # Floating Mascot Header
     st.markdown('<div class="robot-container">', unsafe_allow_html=True)
     render_mascot(220)
     st.markdown("""
@@ -275,7 +276,6 @@ elif st.session_state.page == 'workspace':
             with st.spinner("FocusBot is analyzing your parameters..."):
                 time.sleep(1)
 
-            # Heuristic Logic
             stress_words = ["stress", "anxious", "fail", "scared", "can't", "overwhelmed", "spiraling", "doubt", "hard"]
             stress_score = sum(2 for word in stress_words if word in user_thoughts.lower())
 
@@ -308,9 +308,3 @@ elif st.session_state.page == 'workspace':
                 """)
 
             st.markdown("</div>", unsafe_allow_html=True)
-            
-    # Reset/Back Option
-    st.write("")
-    if st.checkbox("← Back to Welcome Screen"):
-        st.session_state.page = 'welcome'
-        st.rerun()
