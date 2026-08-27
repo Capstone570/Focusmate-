@@ -1,5 +1,1 @@
 streamlit
-streamlit-lottie
-requests
-numpy
-scikit-learn
