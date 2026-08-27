@@ -13,7 +13,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Application Code with Updated Legs & Tighter Spacing
+# 2. Application Code with Fixed Spacing and Layout Positioning
 app_code = """
 <!DOCTYPE html>
 <html lang="en">
@@ -47,6 +47,7 @@ app_code = """
             -webkit-text-fill-color: transparent;
         }
 
+        /* Speech Bubble Tail pointing DOWN to robot */
         .speech-tail::after {
             content: '';
             position: absolute;
@@ -70,16 +71,16 @@ app_code = """
     <canvas id="stage" class="fixed inset-0 w-full h-full z-20"></canvas>
 
     <!-- SCREEN 1: WELCOME SCREEN -->
-    <div id="welcome-screen" class="relative z-10 flex flex-col items-center justify-center min-h-screen text-center w-full max-w-2xl mx-auto">
+    <div id="welcome-screen" class="relative z-10 flex flex-col items-center justify-center min-h-screen text-center w-full max-w-2xl mx-auto py-8">
         <h1 class="text-6xl font-extrabold tracking-tight glow-title mb-2">FocusMate</h1>
         <p class="text-slate-400 text-lg mb-6">Your AI-Powered Deep Work Companion</p>
 
-        <!-- Speech Bubble -->
+        <!-- Speech Bubble sits ABOVE robot -->
         <div id="speech-bubble" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-200 to-pink-200 text-slate-900 font-bold text-xl px-8 py-4 rounded-2xl shadow-lg relative speech-tail mb-44">
             "Hi! Welcome to FocusMate!" ✨
         </div>
 
-        <!-- Button shifted directly below robot -->
+        <!-- Button sits directly UNDER robot -->
         <button id="dive-btn" onclick="startFlightSequence()" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-xl px-10 py-4 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer">
             Let's Dive In! 🚀
         </button>
@@ -187,7 +188,6 @@ app_code = """
             });
         }
 
-        // DRAW COMPLETE ROBOT (WITH LEGS & FEET THRUSTERS)
         function drawRobot(x, y) {
             ctx.save();
             ctx.translate(x, y);
@@ -259,18 +259,13 @@ app_code = """
             ctx.arc(40, 42, 9, 0, Math.PI * 2);
             ctx.fill();
 
-            // --- LEGS & FEET THRUSTERS ---
+            // Legs & Boots
             ctx.fillStyle = '#8b5cf6';
-            // Left Leg
             ctx.beginPath();
             ctx.roundRect(-20, 68, 14, 22, 6);
-            ctx.fill();
-            // Right Leg
-            ctx.beginPath();
             ctx.roundRect(6, 68, 14, 22, 6);
             ctx.fill();
 
-            // Feet (Thruster Boots)
             ctx.fillStyle = '#f472b6';
             ctx.beginPath();
             ctx.roundRect(-22, 88, 18, 10, 4);
@@ -290,7 +285,6 @@ app_code = """
             const hoverY = robot.y + (isFlying ? 0 : Math.sin(frame) * 8);
 
             if (isFlying) {
-                // Particles emitting from the bottom of the new feet
                 for (let i = 0; i < 3; i++) {
                     createSmokeParticle(robot.x - 12, hoverY + 98);
                     createSmokeParticle(robot.x + 12, hoverY + 98);
@@ -322,9 +316,10 @@ app_code = """
         }
         animate();
 
+        // Target position set clearly below speech bubble
         window.addEventListener('DOMContentLoaded', () => {
             gsap.to(robot, {
-                y: window.innerHeight / 2 - 50,
+                y: window.innerHeight / 2 + 30,
                 duration: 1.8,
                 ease: "back.out(1.4)",
                 onComplete: () => {
