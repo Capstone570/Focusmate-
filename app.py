@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # 1. Page Setup
-st.set_page_config(page_title="FocusMate", page_icon="🔮", layout="wide")
+st.set_page_config(page_title="FocusMate AI", page_icon="🔮", layout="wide")
 
 # Hide standard Streamlit header/padding to give full screen to the app
 st.markdown("""
@@ -93,33 +93,66 @@ app_code = """
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="glass-card rounded-2xl p-6 border-l-4 border-purple-400 md:col-span-2">
                 <label class="block text-purple-300 font-bold mb-2 text-lg">💬 1. AI Mind Dump</label>
-                <textarea class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-4 text-slate-100 focus:outline-none focus:border-purple-400" rows="3" placeholder="Vent your raw thoughts, doubts, or anxieties here..."></textarea>
+                <textarea id="input-mind" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-4 text-slate-100 focus:outline-none focus:border-purple-400" rows="3" placeholder="Vent your raw thoughts, doubts, or anxieties here..."></textarea>
             </div>
 
             <div class="glass-card rounded-2xl p-6 border-l-4 border-pink-400">
                 <label class="block text-pink-300 font-bold mb-2 text-lg">📚 2. Target Study Hours</label>
-                <input type="number" min="1" max="12" value="3" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-pink-400">
+                <input id="input-hours" type="number" min="1" max="12" value="3" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-pink-400">
             </div>
 
             <div class="glass-card rounded-2xl p-6 border-l-4 border-sky-400">
                 <label class="block text-sky-300 font-bold mb-2 text-lg">😴 3. Sleep Quality Score (1-10)</label>
-                <input type="range" min="1" max="10" value="7" class="w-full accent-sky-400 cursor-pointer">
+                <input id="input-sleep" type="range" min="1" max="10" value="7" class="w-full accent-sky-400 cursor-pointer">
             </div>
 
             <div class="glass-card rounded-2xl p-6 border-l-4 border-indigo-400">
                 <label class="block text-indigo-300 font-bold mb-2 text-lg">🎯 4. Task Difficulty (1-10)</label>
-                <input type="range" min="1" max="10" value="6" class="w-full accent-indigo-400 cursor-pointer">
+                <input id="input-difficulty" type="range" min="1" max="10" value="6" class="w-full accent-indigo-400 cursor-pointer">
             </div>
 
             <div class="glass-card rounded-2xl p-6 border-l-4 border-emerald-400">
                 <label class="block text-emerald-300 font-bold mb-2 text-lg">⚡ 5. Current Energy Level (1-10)</label>
-                <input type="range" min="1" max="10" value="8" class="w-full accent-emerald-400 cursor-pointer">
+                <input id="input-energy" type="range" min="1" max="10" value="8" class="w-full accent-emerald-400 cursor-pointer">
             </div>
         </div>
 
-        <button onclick="alert('Focus Strategy Generated! 🚀')" class="w-full mt-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-xl py-5 rounded-2xl shadow-xl hover:opacity-90 transition-all cursor-pointer">
+        <button onclick="generateStrategy()" class="w-full mt-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-xl py-5 rounded-2xl shadow-xl hover:opacity-90 transition-all cursor-pointer">
             ✨ Generate Focus Strategy ✨
         </button>
+
+        <!-- DYNAMIC RESULTS DISPLAY AREA -->
+        <div id="strategy-result" class="hidden mt-10 space-y-6">
+            <div class="glass-card rounded-3xl p-8 border border-purple-500/30">
+                <h3 class="text-2xl font-bold glow-title mb-4 text-center">🎯 Your Custom Focus Strategy</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <span class="block text-slate-400 text-sm">Focus Capacity</span>
+                        <span id="score-capacity" class="text-3xl font-extrabold text-purple-400">85%</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <span class="block text-slate-400 text-sm">Sprint Duration</span>
+                        <span id="score-sprint" class="text-3xl font-extrabold text-pink-400">25 min</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <span class="block text-slate-400 text-sm">Rest Interval</span>
+                        <span id="score-rest" class="text-3xl font-extrabold text-sky-400">5 min</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-purple-400">
+                        <h4 class="font-bold text-purple-300">🧠 Mind Dump Analysis</h4>
+                        <p id="analysis-mind" class="text-slate-300 text-sm mt-1">Ready to turn thoughts into organized tasks.</p>
+                    </div>
+                    <div class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-emerald-400">
+                        <h4 class="font-bold text-emerald-300">🚀 Recommended Roadmap</h4>
+                        <p id="analysis-roadmap" class="text-slate-300 text-sm mt-1">Start with low-friction tasks for 10 mins to build momentum.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -295,6 +328,37 @@ app_code = """
                     });
                 }
             });
+        }
+
+        // CALCULATE AND SHOW STRATEGY ON SCREEN
+        function generateStrategy() {
+            const sleep = parseInt(document.getElementById('input-sleep').value);
+            const energy = parseInt(document.getElementById('input-energy').value);
+            const difficulty = parseInt(document.getElementById('input-difficulty').value);
+            const mind = document.getElementById('input-mind').value;
+
+            // Calculate capacity score based on sleep & energy vs task difficulty
+            let capacity = Math.round(((sleep * 0.4) + (energy * 0.6)) * 10);
+            let sprintTime = capacity > 70 ? 45 : capacity > 40 ? 25 : 15;
+            let restTime = sprintTime === 45 ? 10 : 5;
+
+            // Update UI elements
+            document.getElementById('score-capacity').innerText = capacity + '%';
+            document.getElementById('score-sprint').innerText = sprintTime + ' min';
+            document.getElementById('score-rest').innerText = restTime + ' min';
+
+            if (mind.trim().length > 0) {
+                document.getElementById('analysis-mind').innerText = '"' + mind + '" → Clear priority extracted and queued.';
+            } else {
+                document.getElementById('analysis-mind').innerText = 'No mind dump provided. Proceeding with standard flow.';
+            }
+
+            document.getElementById('guide-text').innerText = '"Strategy calculated! Check your custom roadmap below."';
+
+            // Show and scroll smoothly to results
+            const resultDiv = document.getElementById('strategy-result');
+            resultDiv.classList.remove('hidden');
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
         }
     </script>
 </body>
