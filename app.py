@@ -4,7 +4,7 @@ import streamlit.components.v1 as components
 # 1. Page Setup
 st.set_page_config(page_title="FocusMate AI", page_icon="🔮", layout="wide")
 
-# Hide standard Streamlit header/padding to give full screen to the app
+# Hide standard Streamlit header/padding
 st.markdown("""
     <style>
         .block-container { padding: 0 !important; }
@@ -13,7 +13,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Complete Animated Application (HTML/JS/GSAP inside Streamlit string)
+# 2. Application Code with Updated Legs & Tighter Spacing
 app_code = """
 <!DOCTYPE html>
 <html lang="en">
@@ -72,18 +72,20 @@ app_code = """
     <!-- SCREEN 1: WELCOME SCREEN -->
     <div id="welcome-screen" class="relative z-10 flex flex-col items-center justify-center min-h-screen text-center w-full max-w-2xl mx-auto">
         <h1 class="text-6xl font-extrabold tracking-tight glow-title mb-2">FocusMate</h1>
-        <p class="text-slate-400 text-lg mb-8">Your AI-Powered Deep Work Companion</p>
+        <p class="text-slate-400 text-lg mb-6">Your AI-Powered Deep Work Companion</p>
 
-        <div id="speech-bubble" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-200 to-pink-200 text-slate-900 font-bold text-xl px-8 py-4 rounded-2xl shadow-lg relative speech-tail mb-64">
+        <!-- Speech Bubble -->
+        <div id="speech-bubble" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-200 to-pink-200 text-slate-900 font-bold text-xl px-8 py-4 rounded-2xl shadow-lg relative speech-tail mb-44">
             "Hi! Welcome to FocusMate!" ✨
         </div>
 
-        <button id="dive-btn" onclick="startFlightSequence()" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-xl px-10 py-5 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer">
+        <!-- Button shifted directly below robot -->
+        <button id="dive-btn" onclick="startFlightSequence()" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-xl px-10 py-4 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer">
             Let's Dive In! 🚀
         </button>
     </div>
 
-    <!-- SCREEN 2: 5 FEATURES GUIDED BY ROBOT -->
+    <!-- SCREEN 2: WORKSPACE -->
     <div id="workspace-screen" class="hidden relative z-10 w-full max-w-4xl mx-auto py-12">
         <div class="glass-card rounded-3xl p-6 mb-8 text-center relative">
             <h2 class="text-3xl font-bold glow-title mb-2">Interactive Mission Center</h2>
@@ -121,7 +123,6 @@ app_code = """
             ✨ Generate Focus Strategy ✨
         </button>
 
-        <!-- DYNAMIC RESULTS DISPLAY AREA -->
         <div id="strategy-result" class="hidden mt-10 space-y-6">
             <div class="glass-card rounded-3xl p-8 border border-purple-500/30">
                 <h3 class="text-2xl font-bold glow-title mb-4 text-center">🎯 Your Custom Focus Strategy</h3>
@@ -186,18 +187,21 @@ app_code = """
             });
         }
 
+        // DRAW COMPLETE ROBOT (WITH LEGS & FEET THRUSTERS)
         function drawRobot(x, y) {
             ctx.save();
             ctx.translate(x, y);
 
-            const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, 80);
-            grad.addColorStop(0, 'rgba(192, 132, 252, 0.4)');
+            // Aura Glow
+            const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, 90);
+            grad.addColorStop(0, 'rgba(192, 132, 252, 0.35)');
             grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.arc(0, 0, 80, 0, Math.PI * 2);
+            ctx.arc(0, 0, 90, 0, Math.PI * 2);
             ctx.fill();
 
+            // Antenna
             ctx.fillStyle = '#f472b6';
             ctx.beginPath();
             ctx.arc(0, -65, 8, 0, Math.PI * 2);
@@ -210,42 +214,67 @@ app_code = """
             ctx.lineTo(0, -42);
             ctx.stroke();
 
+            // Head
             ctx.fillStyle = '#c084fc';
             ctx.beginPath();
             ctx.roundRect(-45, -42, 90, 64, 20);
             ctx.fill();
 
+            // Visor
             ctx.fillStyle = '#1e1b2e';
             ctx.beginPath();
             ctx.roundRect(-35, -32, 70, 44, 12);
             ctx.fill();
 
+            // Glowing Eyes
             ctx.fillStyle = '#38bdf8';
             ctx.beginPath();
             ctx.arc(-16, -10, 7, 0, Math.PI * 2);
             ctx.arc(16, -10, 7, 0, Math.PI * 2);
             ctx.fill();
 
+            // Cheeks
             ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
             ctx.beginPath();
             ctx.arc(-22, 4, 5, 0, Math.PI * 2);
             ctx.arc(22, 4, 5, 0, Math.PI * 2);
             ctx.fill();
 
+            // Torso
             ctx.fillStyle = '#a855f7';
             ctx.beginPath();
-            ctx.roundRect(-28, 28, 56, 44, 14);
+            ctx.roundRect(-28, 28, 56, 40, 14);
             ctx.fill();
 
+            // Core Heart Badge
             ctx.fillStyle = '#f472b6';
             ctx.beginPath();
             ctx.arc(0, 48, 7, 0, Math.PI * 2);
             ctx.fill();
 
+            // Arms
             ctx.fillStyle = '#c084fc';
             ctx.beginPath();
-            ctx.arc(-42, 42, 10, 0, Math.PI * 2);
-            ctx.arc(42, 42, 10, 0, Math.PI * 2);
+            ctx.arc(-40, 42, 9, 0, Math.PI * 2);
+            ctx.arc(40, 42, 9, 0, Math.PI * 2);
+            ctx.fill();
+
+            // --- LEGS & FEET THRUSTERS ---
+            ctx.fillStyle = '#8b5cf6';
+            // Left Leg
+            ctx.beginPath();
+            ctx.roundRect(-20, 68, 14, 22, 6);
+            ctx.fill();
+            // Right Leg
+            ctx.beginPath();
+            ctx.roundRect(6, 68, 14, 22, 6);
+            ctx.fill();
+
+            // Feet (Thruster Boots)
+            ctx.fillStyle = '#f472b6';
+            ctx.beginPath();
+            ctx.roundRect(-22, 88, 18, 10, 4);
+            ctx.roundRect(4, 88, 18, 10, 4);
             ctx.fill();
 
             ctx.restore();
@@ -261,8 +290,10 @@ app_code = """
             const hoverY = robot.y + (isFlying ? 0 : Math.sin(frame) * 8);
 
             if (isFlying) {
+                // Particles emitting from the bottom of the new feet
                 for (let i = 0; i < 3; i++) {
-                    createSmokeParticle(robot.x, hoverY + 60);
+                    createSmokeParticle(robot.x - 12, hoverY + 98);
+                    createSmokeParticle(robot.x + 12, hoverY + 98);
                 }
             }
 
@@ -293,7 +324,7 @@ app_code = """
 
         window.addEventListener('DOMContentLoaded', () => {
             gsap.to(robot, {
-                y: window.innerHeight / 2 - 20,
+                y: window.innerHeight / 2 - 50,
                 duration: 1.8,
                 ease: "back.out(1.4)",
                 onComplete: () => {
@@ -330,19 +361,15 @@ app_code = """
             });
         }
 
-        // CALCULATE AND SHOW STRATEGY ON SCREEN
         function generateStrategy() {
             const sleep = parseInt(document.getElementById('input-sleep').value);
             const energy = parseInt(document.getElementById('input-energy').value);
-            const difficulty = parseInt(document.getElementById('input-difficulty').value);
             const mind = document.getElementById('input-mind').value;
 
-            // Calculate capacity score based on sleep & energy vs task difficulty
             let capacity = Math.round(((sleep * 0.4) + (energy * 0.6)) * 10);
             let sprintTime = capacity > 70 ? 45 : capacity > 40 ? 25 : 15;
             let restTime = sprintTime === 45 ? 10 : 5;
 
-            // Update UI elements
             document.getElementById('score-capacity').innerText = capacity + '%';
             document.getElementById('score-sprint').innerText = sprintTime + ' min';
             document.getElementById('score-rest').innerText = restTime + ' min';
@@ -355,7 +382,6 @@ app_code = """
 
             document.getElementById('guide-text').innerText = '"Strategy calculated! Check your custom roadmap below."';
 
-            // Show and scroll smoothly to results
             const resultDiv = document.getElementById('strategy-result');
             resultDiv.classList.remove('hidden');
             resultDiv.scrollIntoView({ behavior: 'smooth' });
@@ -365,5 +391,4 @@ app_code = """
 </html>
 """
 
-# Render inside Streamlit safely
 components.html(app_code, height=900, scrolling=True)
