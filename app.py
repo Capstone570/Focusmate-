@@ -13,7 +13,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Application Code with Dynamic Slider Badges & Scale Labels
+# 2. Application Code with Dynamic Slider Badges, Scale Labels, & Preset Mood Buttons
 app_code = """
 <!DOCTYPE html>
 <html lang="en">
@@ -93,7 +93,25 @@ app_code = """
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- 1. MIND DUMP -->
             <div class="glass-card rounded-2xl p-6 border-l-4 border-purple-400 md:col-span-2">
-                <label class="block text-purple-300 font-bold mb-2 text-lg">💬 1. AI Mind Dump</label>
+                <label class="block text-purple-300 font-bold mb-1 text-lg">💬 1. AI Mind Dump</label>
+                <p class="text-slate-400 text-xs mb-3">Tap a mood below or type your raw thoughts in the text box:</p>
+
+                <!-- PRESET MOOD BUTTONS -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                    <button type="button" onclick="setPresetMood('I feel stressed and anxious right now.')" class="bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 hover:border-purple-400 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition-all text-center">
+                        😰 Stressed / Anxious
+                    </button>
+                    <button type="button" onclick="setPresetMood('I feel tired and low energy.')" class="bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 hover:border-purple-400 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition-all text-center">
+                        🥱 Tired / Low Energy
+                    </button>
+                    <button type="button" onclick="setPresetMood('I am easily distracted and restless.')" class="bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 hover:border-purple-400 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition-all text-center">
+                        📱 Distracted / Restless
+                    </button>
+                    <button type="button" onclick="setPresetMood('I feel completely overwhelmed by options.')" class="bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 hover:border-purple-400 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition-all text-center">
+                        🌀 Overwhelmed by Options
+                    </button>
+                </div>
+
                 <textarea id="input-mind" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-4 text-slate-100 focus:outline-none focus:border-purple-400" rows="3" placeholder="Vent your raw thoughts, doubts, or anxieties here..."></textarea>
             </div>
 
@@ -182,6 +200,11 @@ app_code = """
     </div>
 
     <script>
+        // PRESET MOOD FILLER
+        function setPresetMood(text) {
+            document.getElementById('input-mind').value = text;
+        }
+
         // LIVE SLIDER BADGE UPDATER
         function updateSliderValue(id, value) {
             document.getElementById(`badge-${id}`).innerText = `${value} / 10`;
