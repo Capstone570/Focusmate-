@@ -13,7 +13,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Application Code with Dynamic Slider Badges, Scale Labels, & Preset Mood Buttons
+# 2. Application Code
 app_code = """
 <!DOCTYPE html>
 <html lang="en">
@@ -107,8 +107,8 @@ app_code = """
                     <button type="button" onclick="setPresetMood('I am easily distracted and restless.')" class="bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 hover:border-purple-400 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition-all text-center">
                         📱 Distracted / Restless
                     </button>
-                    <button type="button" onclick="setPresetMood('I feel completely overwhelmed by options.')" class="bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 hover:border-purple-400 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition-all text-center">
-                        🌀 Overwhelmed by Options
+                    <button type="button" onclick="setPresetMood('I feel optimistic, happy, and ready to focus!')" class="bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 hover:border-purple-400 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition-all text-center">
+                        🌟 Happy / Motivated
                     </button>
                 </div>
 
@@ -200,12 +200,10 @@ app_code = """
     </div>
 
     <script>
-        // PRESET MOOD FILLER
         function setPresetMood(text) {
             document.getElementById('input-mind').value = text;
         }
 
-        // LIVE SLIDER BADGE UPDATER
         function updateSliderValue(id, value) {
             document.getElementById(`badge-${id}`).innerText = `${value} / 10`;
         }
@@ -413,8 +411,11 @@ app_code = """
             let emotionalFeedback = "";
             let roadmapFeedback = "";
 
-            if (mind.includes('stress') || mind.includes('suffocat') || mind.includes('anxi') || mind.includes('overwhelmed')) {
-                emotionalFeedback = "I hear you. High mental pressure detected—take a deep breath. You don't have to finish everything right now, just focus on one micro-step.";
+            if (mind.includes('happy') || mind.includes('good') || mind.includes('great') || mind.includes('excited') || mind.includes('optimistic') || mind.includes('ready')) {
+                emotionalFeedback = "Positive energy detected! Being in a good state of mind enhances creative problem solving and cognitive endurance.";
+                roadmapFeedback = `Capitalize on your momentum! Dive straight into your challenging core tasks during your first ${sprintTime}-minute focus block.`;
+            } else if (mind.includes('stress') || mind.includes('suffocat') || mind.includes('anxi') || mind.includes('overwhelmed')) {
+                emotionalFeedback = "High mental pressure detected—take a deep breath. You don't have to finish everything right now, just focus on one micro-step.";
                 roadmapFeedback = "Since you're feeling overwhelmed, start with 5 minutes of super easy admin work (cleaning desktop, organizing notes) to lower cortisol before tackling hard tasks.";
             } else if (mind.includes('bored') || mind.includes('tired') || mind.includes('lazy') || mind.includes('sleepy')) {
                 emotionalFeedback = "Low stimulation detected. Your brain is seeking dopamine and resisting deep effort.";
@@ -424,7 +425,7 @@ app_code = """
                 roadmapFeedback = "Put your phone in another room or turn on Do Not Disturb immediately. Run a short 15-minute high-intensity micro-sprint.";
             } else if (mind.length > 0) {
                 emotionalFeedback = `Thoughts logged: "${mind}". Expressing mental chatter reduces cognitive load and frees up working memory!`;
-                roadmapFeedback = `Break down "${mind.substring(0, 30)}..." into 3 bite-sized steps and execute step 1 during your first ${sprintTime}-minute sprint.`;
+                roadmapFeedback = `Focus on key priorities during your first ${sprintTime}-minute sprint.`;
             } else {
                 emotionalFeedback = "No mental dump provided. Mind is clear and ready to work!";
                 roadmapFeedback = `Start your first ${sprintTime}-minute micro-sprint directly with your highest priority task.`;
