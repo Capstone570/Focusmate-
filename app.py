@@ -1,10 +1,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# 1. Page Setup
-st.set_page_config(page_title="FocusMate AI", page_icon="🔮", layout="wide")
+st.set_page_config(page_title="FocusMate AI Pro", page_icon="🔮", layout="wide")
 
-# Hide standard Streamlit header/padding
 st.markdown("""
     <style>
         .block-container { padding: 0 !important; }
@@ -13,7 +11,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Application Code
 app_code = """
 <!DOCTYPE html>
 <html lang="en">
@@ -47,17 +44,10 @@ app_code = """
             -webkit-text-fill-color: transparent;
         }
 
-        .speech-tail::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-width: 10px 10px 0;
-            border-style: solid;
-            border-color: #fbcfe8 transparent;
-            display: block;
-            width: 0;
+        .mood-btn.active {
+            border-color: #c084fc !important;
+            background-color: rgba(147, 51, 234, 0.3) !important;
+            box-shadow: 0 0 12px rgba(192, 132, 252, 0.3);
         }
 
         canvas {
@@ -71,11 +61,11 @@ app_code = """
 
     <!-- SCREEN 1: WELCOME SCREEN -->
     <div id="welcome-screen" class="relative z-10 flex flex-col items-center justify-center min-h-screen text-center w-full max-w-2xl mx-auto py-8">
-        <h1 class="text-6xl font-extrabold tracking-tight glow-title mb-2">FocusMate</h1>
-        <p class="text-slate-400 text-lg mb-6">Your AI-Powered Deep Work Companion</p>
+        <h1 class="text-6xl font-extrabold tracking-tight glow-title mb-2">FocusMate AI</h1>
+        <p class="text-slate-400 text-lg mb-6">Your End-to-End Deep Work Engine</p>
 
         <div id="speech-bubble" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-200 to-pink-200 text-slate-900 font-bold text-xl px-8 py-4 rounded-2xl shadow-lg relative speech-tail mb-44">
-            "Hi! Welcome to FocusMate!" ✨
+            "Hi! Ready to boost your productivity today?" ✨
         </div>
 
         <button id="dive-btn" onclick="startFlightSequence()" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-xl px-10 py-4 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer">
@@ -87,77 +77,58 @@ app_code = """
     <div id="workspace-screen" class="hidden relative z-10 w-full max-w-4xl mx-auto py-12">
         <div class="glass-card rounded-3xl p-6 mb-8 text-center relative">
             <h2 class="text-3xl font-bold glow-title mb-2">Interactive Mission Center</h2>
-            <p id="guide-text" class="text-pink-200 font-semibold text-lg">"Let's configure your 5 session parameters below!"</p>
+            <p id="guide-text" class="text-pink-200 font-semibold text-lg">"Configure your parameters to generate a custom focus strategy."</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- 1. MIND DUMP -->
+            <!-- 1. MOOD SELECTOR -->
             <div class="glass-card rounded-2xl p-6 border-l-4 border-purple-400 md:col-span-2">
-                <label class="block text-purple-300 font-bold mb-1 text-lg">💬 1. AI Mind Dump</label>
-                <p class="text-slate-400 text-xs mb-3">Tap a mood below or type your raw thoughts in the text box:</p>
-
-                <!-- PRESET MOOD BUTTONS -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-                    <button type="button" onclick="setPresetMood('I feel stressed and anxious right now.')" class="bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 hover:border-purple-400 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition-all text-center">
+                <label class="block text-purple-300 font-bold mb-1 text-lg">🧠 1. Current State of Mind</label>
+                <p class="text-slate-400 text-xs mb-3">Select your current mental state:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <button type="button" id="btn-stressed" onclick="selectMood('stressed')" class="mood-btn active bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 text-slate-200 text-xs font-semibold py-3 px-3 rounded-xl transition-all text-center">
                         😰 Stressed / Anxious
                     </button>
-                    <button type="button" onclick="setPresetMood('I feel tired and low energy.')" class="bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 hover:border-purple-400 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition-all text-center">
+                    <button type="button" id="btn-tired" onclick="selectMood('tired')" class="mood-btn bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 text-slate-200 text-xs font-semibold py-3 px-3 rounded-xl transition-all text-center">
                         🥱 Tired / Low Energy
                     </button>
-                    <button type="button" onclick="setPresetMood('I am easily distracted and restless.')" class="bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 hover:border-purple-400 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition-all text-center">
+                    <button type="button" id="btn-distracted" onclick="selectMood('distracted')" class="mood-btn bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 text-slate-200 text-xs font-semibold py-3 px-3 rounded-xl transition-all text-center">
                         📱 Distracted / Restless
                     </button>
-                    <button type="button" onclick="setPresetMood('I feel optimistic, happy, and ready to focus!')" class="bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 hover:border-purple-400 text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition-all text-center">
+                    <button type="button" id="btn-happy" onclick="selectMood('happy')" class="mood-btn bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 text-slate-200 text-xs font-semibold py-3 px-3 rounded-xl transition-all text-center">
                         🌟 Happy / Motivated
                     </button>
                 </div>
-
-                <textarea id="input-mind" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-4 text-slate-100 focus:outline-none focus:border-purple-400" rows="3" placeholder="Vent your raw thoughts, doubts, or anxieties here..."></textarea>
             </div>
 
-            <!-- 2. TARGET HOURS -->
-            <div class="glass-card rounded-2xl p-6 border-l-4 border-pink-400">
-                <label class="block text-pink-300 font-bold mb-2 text-lg">📚 2. Target Study Hours</label>
-                <input id="input-hours" type="number" min="1" max="12" value="3" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-pink-400">
+            <!-- 2. TASK INPUT & DIFFICULTY -->
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-pink-400 md:col-span-2">
+                <label class="block text-pink-300 font-bold mb-1 text-lg">🎯 2. Primary Task Goal</label>
+                <input id="input-task-name" type="text" placeholder="e.g., Write Chapter 1 of Biology Notes, Build UI layout..." class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-pink-400 mb-4">
+                
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-indigo-300 font-semibold text-sm">Perceived Difficulty</label>
+                    <span id="badge-difficulty" class="bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 px-3 py-1 rounded-lg font-bold text-xs">6 / 10</span>
+                </div>
+                <input id="input-difficulty" type="range" min="1" max="10" value="6" oninput="updateSliderValue('difficulty', this.value)" class="w-full accent-indigo-400 cursor-pointer">
             </div>
 
             <!-- 3. SLEEP QUALITY SLIDER -->
             <div class="glass-card rounded-2xl p-6 border-l-4 border-sky-400">
                 <div class="flex justify-between items-center mb-2">
-                    <label class="text-sky-300 font-bold text-lg">😴 3. Sleep Quality Score</label>
+                    <label class="text-sky-300 font-bold text-lg">😴 3. Sleep Score</label>
                     <span id="badge-sleep" class="bg-sky-500/20 text-sky-300 border border-sky-400/40 px-3 py-1 rounded-lg font-extrabold text-base">7 / 10</span>
                 </div>
                 <input id="input-sleep" type="range" min="1" max="10" value="7" oninput="updateSliderValue('sleep', this.value)" class="w-full accent-sky-400 cursor-pointer">
-                <div class="flex justify-between text-xs text-slate-400 mt-1">
-                    <span>1 (Poor)</span>
-                    <span>10 (Restful)</span>
-                </div>
             </div>
 
-            <!-- 4. TASK DIFFICULTY SLIDER -->
-            <div class="glass-card rounded-2xl p-6 border-l-4 border-indigo-400">
-                <div class="flex justify-between items-center mb-2">
-                    <label class="text-indigo-300 font-bold text-lg">🎯 4. Task Difficulty</label>
-                    <span id="badge-difficulty" class="bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 px-3 py-1 rounded-lg font-extrabold text-base">6 / 10</span>
-                </div>
-                <input id="input-difficulty" type="range" min="1" max="10" value="6" oninput="updateSliderValue('difficulty', this.value)" class="w-full accent-indigo-400 cursor-pointer">
-                <div class="flex justify-between text-xs text-slate-400 mt-1">
-                    <span>1 (Easy)</span>
-                    <span>10 (Extreme)</span>
-                </div>
-            </div>
-
-            <!-- 5. ENERGY LEVEL SLIDER -->
+            <!-- 4. ENERGY LEVEL SLIDER -->
             <div class="glass-card rounded-2xl p-6 border-l-4 border-emerald-400">
                 <div class="flex justify-between items-center mb-2">
-                    <label class="text-emerald-300 font-bold text-lg">⚡ 5. Current Energy Level</label>
+                    <label class="text-emerald-300 font-bold text-lg">⚡ 4. Energy Level</label>
                     <span id="badge-energy" class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 px-3 py-1 rounded-lg font-extrabold text-base">8 / 10</span>
                 </div>
                 <input id="input-energy" type="range" min="1" max="10" value="8" oninput="updateSliderValue('energy', this.value)" class="w-full accent-emerald-400 cursor-pointer">
-                <div class="flex justify-between text-xs text-slate-400 mt-1">
-                    <span>1 (Exhausted)</span>
-                    <span>10 (Fully Charged)</span>
-                </div>
             </div>
         </div>
 
@@ -168,7 +139,7 @@ app_code = """
         <!-- RESULTS SECTION -->
         <div id="strategy-result" class="hidden mt-10 space-y-6">
             <div class="glass-card rounded-3xl p-8 border border-purple-500/30">
-                <h3 class="text-2xl font-bold glow-title mb-4 text-center">🎯 Your Custom Focus Strategy</h3>
+                <h3 class="text-2xl font-bold glow-title mb-4 text-center">🎯 Strategy & Action Plan</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
                     <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
@@ -185,23 +156,72 @@ app_code = """
                     </div>
                 </div>
 
-                <div class="space-y-4">
-                    <div class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-purple-400">
-                        <h4 class="font-bold text-purple-300">🧠 Mind Dump & Emotional Status</h4>
-                        <p id="analysis-mind" class="text-slate-300 text-sm mt-1"></p>
+                <!-- DYNAMIC TASK BREAKDOWN -->
+                <div class="bg-slate-900/80 p-5 rounded-xl border-l-4 border-indigo-400 mb-4">
+                    <h4 class="font-bold text-indigo-300 text-lg mb-2">📋 AI Action Roadmap (3 Steps)</h4>
+                    <ol id="task-steps-list" class="list-decimal list-inside space-y-2 text-slate-300 text-sm font-medium">
+                    </ol>
+                </div>
+
+                <!-- LIVE TIMER & AUDIO SUITE -->
+                <div class="bg-gradient-to-r from-slate-900 to-purple-950 p-6 rounded-2xl border border-purple-500/30 text-center mb-6">
+                    <span class="text-xs uppercase tracking-widest text-slate-400 font-semibold">Active Execution Suite</span>
+                    <div id="timer-display" class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-300 my-3">25:00</div>
+                    
+                    <div class="flex justify-center gap-3 mb-4">
+                        <button id="timer-btn" onclick="toggleTimer()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all">Start Sprint</button>
+                        <button onclick="resetTimer()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-4 py-2 rounded-xl text-sm transition-all">Reset</button>
                     </div>
-                    <div class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-emerald-400">
-                        <h4 class="font-bold text-emerald-300">🚀 Recommended Roadmap</h4>
-                        <p id="analysis-roadmap" class="text-slate-300 text-sm mt-1"></p>
+
+                    <!-- AMBIENT AUDIO PLAYER -->
+                    <div class="flex items-center justify-center gap-2 text-xs text-slate-400 border-t border-slate-800 pt-3">
+                        <span>🔊 Soundscape:</span>
+                        <select id="audio-select" onchange="changeAudioSource()" class="bg-slate-900 text-purple-300 font-semibold rounded-lg px-2 py-1 border border-slate-700 focus:outline-none">
+                            <option value="binaural">Alpha Binaural Beats (Focus)</option>
+                            <option value="rain">Calming Heavy Rain (Stress Relief)</option>
+                            <option value="white">White Noise (Distraction Blocking)</option>
+                        </select>
+                        <button onclick="toggleAudio()" id="audio-btn" class="text-pink-400 font-bold ml-2 underline">Play Sound</button>
+                    </div>
+                </div>
+
+                <!-- ANALYTICS & STREAK TRACKER -->
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
+                    <div>
+                        <span class="block text-slate-400 text-xs font-bold uppercase">Daily Streak</span>
+                        <span id="streak-count" class="text-2xl font-extrabold text-emerald-400">🔥 1 Day</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="block text-slate-400 text-xs font-bold uppercase">Completed Sprints</span>
+                        <span id="sprint-count" class="text-2xl font-extrabold text-sky-400">0 Sprints</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- AUDIO ENGINE -->
+    <audio id="ambient-audio" loop></audio>
+
     <script>
-        function setPresetMood(text) {
-            document.getElementById('input-mind').value = text;
+        let selectedMoodState = 'stressed';
+        let timerInterval = null;
+        let timeRemaining = 1500;
+        let isTimerRunning = false;
+        let audioPlaying = false;
+        let sprintsCompleted = 0;
+        let currentSprintDuration = 25;
+
+        const soundUrls = {
+            binaural: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
+            rain: "https://cdn.pixabay.com/download/audio/2021/09/06/audio_8a287e07eb.mp3",
+            white: "https://cdn.pixabay.com/download/audio/2022/03/24/audio_c8c8731f82.mp3"
+        };
+
+        function selectMood(mood) {
+            selectedMoodState = mood;
+            document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${mood}`).classList.add('active');
         }
 
         function updateSliderValue(id, value) {
@@ -218,12 +238,7 @@ app_code = """
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        const robot = {
-            x: window.innerWidth / 2,
-            y: -150,
-            size: 1
-        };
-
+        const robot = { x: window.innerWidth / 2, y: -150 };
         const particles = [];
 
         function createSmokeParticle(x, y) {
@@ -321,7 +336,6 @@ app_code = """
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             frame += 0.04;
-
             const hoverY = robot.y + (isFlying ? 0 : Math.sin(frame) * 8);
 
             if (isFlying) {
@@ -371,7 +385,6 @@ app_code = """
         function startFlightSequence() {
             isFlying = true;
             gsap.to('#welcome-screen', { opacity: 0, duration: 0.4 });
-
             gsap.to(robot, {
                 y: -300,
                 duration: 1.2,
@@ -379,69 +392,136 @@ app_code = """
                 onComplete: () => {
                     document.getElementById('welcome-screen').classList.add('hidden');
                     document.getElementById('workspace-screen').classList.remove('hidden');
-
                     robot.x = window.innerWidth - 120;
                     robot.y = -100;
-
                     gsap.to(robot, {
                         y: 120,
                         duration: 1,
                         ease: "bounce.out",
-                        onComplete: () => {
-                            isFlying = false;
-                        }
+                        onComplete: () => { isFlying = false; }
                     });
                 }
             });
         }
 
+        // STRATEGY & TASK BREAKDOWN LOGIC
         function generateStrategy() {
             const sleep = parseInt(document.getElementById('input-sleep').value);
             const energy = parseInt(document.getElementById('input-energy').value);
-            const mind = document.getElementById('input-mind').value.trim().toLowerCase();
+            const difficulty = parseInt(document.getElementById('input-difficulty').value);
+            const rawTask = document.getElementById('input-task-name').value.trim();
+            const taskName = rawTask || "Primary Goal";
 
             let capacity = Math.round(((sleep * 0.4) + (energy * 0.6)) * 10);
-            let sprintTime = capacity > 70 ? 45 : capacity > 40 ? 25 : 15;
+            
+            let sprintTime = 25;
+            if (capacity >= 75 && difficulty <= 7) sprintTime = 45;
+            else if (capacity < 45 || difficulty >= 8) sprintTime = 15;
+
+            currentSprintDuration = sprintTime;
+            timeRemaining = sprintTime * 60;
+            updateTimerDisplay();
+
             let restTime = sprintTime === 45 ? 10 : 5;
 
             document.getElementById('score-capacity').innerText = capacity + '%';
             document.getElementById('score-sprint').innerText = sprintTime + ' min';
             document.getElementById('score-rest').innerText = restTime + ' min';
 
-            let emotionalFeedback = "";
-            let roadmapFeedback = "";
+            // Generate 3 Actionable Micro-Steps based on task input
+            const listContainer = document.getElementById('task-steps-list');
+            listContainer.innerHTML = `
+                <li>Set up workspace and open resources for: <strong>${taskName}</strong>.</li>
+                <li>Execute core effort for ${sprintTime} minutes (focus solely on step 1 of ${taskName}).</li>
+                <li>Review progress, outline next steps, and enter a ${restTime}-minute break.</li>
+            `;
 
-            if (mind.includes('happy') || mind.includes('good') || mind.includes('great') || mind.includes('excited') || mind.includes('optimistic') || mind.includes('ready')) {
-                emotionalFeedback = "Positive energy detected! Being in a good state of mind enhances creative problem solving and cognitive endurance.";
-                roadmapFeedback = `Capitalize on your momentum! Dive straight into your challenging core tasks during your first ${sprintTime}-minute focus block.`;
-            } else if (mind.includes('stress') || mind.includes('suffocat') || mind.includes('anxi') || mind.includes('overwhelmed')) {
-                emotionalFeedback = "High mental pressure detected—take a deep breath. You don't have to finish everything right now, just focus on one micro-step.";
-                roadmapFeedback = "Since you're feeling overwhelmed, start with 5 minutes of super easy admin work (cleaning desktop, organizing notes) to lower cortisol before tackling hard tasks.";
-            } else if (mind.includes('bored') || mind.includes('tired') || mind.includes('lazy') || mind.includes('sleepy')) {
-                emotionalFeedback = "Low stimulation detected. Your brain is seeking dopamine and resisting deep effort.";
-                roadmapFeedback = "Use the '5-Minute Rule': commit to working for just 300 seconds. If you still feel bored, take a brisk walk, drink cold water, and change your work spot.";
-            } else if (mind.includes('distract') || mind.includes('phone') || mind.includes('social')) {
-                emotionalFeedback = "Attention fragmentation detected. External distractions are pulling your focus away.";
-                roadmapFeedback = "Put your phone in another room or turn on Do Not Disturb immediately. Run a short 15-minute high-intensity micro-sprint.";
-            } else if (mind.length > 0) {
-                emotionalFeedback = `Thoughts logged: "${mind}". Expressing mental chatter reduces cognitive load and frees up working memory!`;
-                roadmapFeedback = `Focus on key priorities during your first ${sprintTime}-minute sprint.`;
-            } else {
-                emotionalFeedback = "No mental dump provided. Mind is clear and ready to work!";
-                roadmapFeedback = `Start your first ${sprintTime}-minute micro-sprint directly with your highest priority task.`;
-            }
+            // Auto-set ambient audio preset based on mood selection
+            const audioSelect = document.getElementById('audio-select');
+            if (selectedMoodState === 'stressed') audioSelect.value = 'rain';
+            else if (selectedMoodState === 'distracted') audioSelect.value = 'white';
+            else audioSelect.value = 'binaural';
 
-            document.getElementById('analysis-mind').innerText = emotionalFeedback;
-            document.getElementById('analysis-roadmap').innerText = roadmapFeedback;
-            document.getElementById('guide-text').innerText = '"Strategy calculated! Check your custom roadmap below."';
-
+            document.getElementById('guide-text').innerText = '"Strategy & roadmap calculated below!"';
             const resultDiv = document.getElementById('strategy-result');
             resultDiv.classList.remove('hidden');
             resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // TIMER ENGINE logic
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeRemaining / 60);
+            const secs = timeRemaining % 60;
+            document.getElementById('timer-display').innerText = 
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('timer-btn');
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                btn.innerText = "Resume Sprint";
+                btn.className = "bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all";
+            } else {
+                isTimerRunning = true;
+                btn.innerText = "Pause";
+                btn.className = "bg-pink-600 hover:bg-pink-500 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all";
+                timerInterval = setInterval(() => {
+                    if (timeRemaining > 0) {
+                        timeRemaining--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isTimerRunning = false;
+                        sprintsCompleted++;
+                        document.getElementById('sprint-count').innerText = `${sprintsCompleted} Sprints`;
+                        alert("🎉 Sprint Completed! Take your break now.");
+                        resetTimer();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timeRemaining = currentSprintDuration * 60;
+            updateTimerDisplay();
+            const btn = document.getElementById('timer-btn');
+            btn.innerText = "Start Sprint";
+            btn.className = "bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all";
+        }
+
+        // AMBIENT AUDIO ENGINE logic
+        function toggleAudio() {
+            const audio = document.getElementById('ambient-audio');
+            const btn = document.getElementById('audio-btn');
+            const selected = document.getElementById('audio-select').value;
+
+            if (audioPlaying) {
+                audio.pause();
+                audioPlaying = false;
+                btn.innerText = "Play Sound";
+            } else {
+                audio.src = soundUrls[selected];
+                audio.play();
+                audioPlaying = true;
+                btn.innerText = "Pause Sound";
+            }
+        }
+
+        function changeAudioSource() {
+            if (audioPlaying) {
+                const audio = document.getElementById('ambient-audio');
+                const selected = document.getElementById('audio-select').value;
+                audio.src = soundUrls[selected];
+                audio.play();
+            }
         }
     </script>
 </body>
 </html>
 """
 
-components.html(app_code, height=900, scrolling=True)
+components.html(app_code, height=950, scrolling=True)
