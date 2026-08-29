@@ -1,12 +1,9 @@
 import streamlit as st
 
-# Page Configuration
-st.set_page_config(page_title="FocusMate", page_icon="🧠", layout="centered")
+# 1. Page Configuration
+st.set_page_config(page_title="FocusMate AI", page_icon="🔮", layout="centered")
 
-st.title("🧠 FocusMate")
-st.caption("Your Grounded Deep Work Companion")
-
-# Pre-mapped Mood Database
+# 2. Reassuring Response Database
 MOOD_DATABASE = {
     "stressed": {
         "title": "😰 High Stress & Pressure",
@@ -30,74 +27,97 @@ MOOD_DATABASE = {
     }
 }
 
-# User Inputs
-st.subheader("1. How are you feeling right now?")
-
-# Create a 2x2 grid for mood selection
-col1, col2 = st.columns(2)
-with col1:
-    btn_stressed = st.button("😰 Stressed / Anxious", use_container_width=True)
-    btn_distracted = st.button("📱 Distracted / Restless", use_container_width=True)
-with col2:
-    btn_tired = st.button("🥱 Tired / Low Energy", use_container_width=True)
-    btn_overwhelmed = st.button("🌀 Overwhelmed by Options", use_container_width=True)
-
-# Maintain mood selection state
+# Preserve State for Mood Button Selection & Text Input
 if "selected_mood" not in st.session_state:
     st.session_state.selected_mood = None
+if "mind_dump_text" not in st.session_state:
+    st.session_state.mind_dump_text = ""
 
-if btn_stressed:
-    st.session_state.selected_mood = "stressed"
-elif btn_tired:
-    st.session_state.selected_mood = "tired"
-elif btn_distracted:
-    st.session_state.selected_mood = "distracted"
-elif btn_overwhelmed:
-    st.session_state.selected_mood = "overwhelmed"
+# Mascot & Header
+st.title("🔮 FocusMate AI")
+st.caption("Your AI-Powered Deep Work Companion")
 
-# Display chosen status indicator
-if st.session_state.selected_mood:
-    mood_info = MOOD_DATABASE[st.session_state.selected_mood]
-    st.info(f"Selected: **{mood_info['title']}**")
-else:
-    st.warning("Please tap a button above to select your current state.")
+st.info("🔒 **Privacy Guarantee:** Your input is processed in memory and never logged, saved, or shared.", icon="🛡️")
 
-st.divider()
+# 3. Form Input Area
+with st.form("focus_form"):
+    st.markdown("### 💬 1. AI Mind Dump")
+    st.caption("Tap a mood below or type your raw thoughts in the text box:")
 
-# Biometric & Session Sliders
-st.subheader("2. Session Parameters")
-target_hours = st.number_input("📚 Target Study Hours", min_value=1, max_value=12, value=3)
+    # Quick Mood Option Buttons
+    btn_col1, btn_col2 = st.columns(2)
+    with btn_col1:
+        if st.form_submit_button("😰 Stressed / Anxious", use_container_width=True):
+            st.session_state.selected_mood = "stressed"
+            st.session_state.mind_dump_text = MOOD_DATABASE["stressed"]["title"]
+        if st.form_submit_button("📱 Distracted / Restless", use_container_width=True):
+            st.session_state.selected_mood = "distracted"
+            st.session_state.mind_dump_text = MOOD_DATABASE["distracted"]["title"]
+            
+    with btn_col2:
+        if st.form_submit_button("🥱 Tired / Low Energy", use_container_width=True):
+            st.session_state.selected_mood = "tired"
+            st.session_state.mind_dump_text = MOOD_DATABASE["tired"]["title"]
+        if st.form_submit_button("🌀 Overwhelmed by Options", use_container_width=True):
+            st.session_state.selected_mood = "overwhelmed"
+            st.session_state.mind_dump_text = MOOD_DATABASE["overwhelmed"]["title"]
 
-s_col1, s_col2 = st.columns(2)
-with s_col1:
-    sleep_score = st.slider("😴 Sleep Quality", min_value=1, max_value=10, value=7)
-with s_col2:
-    energy_score = st.slider("⚡ Energy Level", min_value=1, max_value=10, value=7)
+    # Text Area (User can type freely or use selected mood)
+    mind_dump = st.text_area(
+        "Or describe what's on your mind:",
+        value=st.session_state.mind_dump_text,
+        placeholder="Vent your raw thoughts, doubts, fears, or anxieties here...",
+        help="Type anything on your mind—the system will read the context and guide you empathetically."
+    )
+    
+    # Original Input Controls & Sliders
+    target_hours = st.number_input("📚 2. Target Study Hours", min_value=1, max_value=12, value=3)
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        sleep_score = st.slider("😴 3. Sleep Score", min_value=1, max_value=10, value=7)
+    with col2:
+        difficulty_score = st.slider("🎯 4. Task Difficulty", min_value=1, max_value=10, value=6)
+    with col3:
+        energy_score = st.slider("⚡ 5. Energy Level", min_value=1, max_value=10, value=8)
 
-generate = st.button("✨ Generate Focus Strategy ✨", type="primary", use_container_width=True)
+    submit_button = st.form_submit_button("✨ Generate Focus Strategy ✨", use_container_width=True)
 
-# Strategy Output
-if generate:
-    if not st.session_state.selected_mood:
-        st.error("Please pick a mood status first before generating your strategy.")
-    else:
-        # Calculate dynamic capacity and session pacing
-        capacity = round(((sleep_score * 0.4) + (energy_score * 0.6)) * 10)
-        sprint_time = 35 if capacity > 70 else (20 if capacity > 40 else 10)
-        rest_time = 5
+# 4. Actionable Response Output
+if submit_button:
+    # Determine response logic (Rule-based match or generic reassurance fallback)
+    selected_key = st.session_state.selected_mood
+    
+    if not selected_key:
+        # Match text input if keywords exist, default to overwhelmed
+        text_lower = mind_dump.lower()
+        if "stress" in text_lower or "anxi" in text_lower:
+            selected_key = "stressed"
+        elif "tir" in text_lower or "sleep" in text_lower or "exhaust" in text_lower:
+            selected_key = "tired"
+        elif "distract" in text_lower or "focus" in text_lower or "phone" in text_lower:
+            selected_key = "distracted"
+        else:
+            selected_key = "overwhelmed"
 
-        st.divider()
-        st.subheader("🎯 Your Custom Action Plan")
+    mood_data = MOOD_DATABASE[selected_key]
 
-        # Metrics display
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Focus Capacity", f"{capacity}%")
-        m2.metric("Sprint Length", f"{sprint_time} min")
-        m3.metric("Rest Break", f"{rest_time} min")
+    # Calculate metrics matching your slider formulas
+    capacity = round(((sleep_score * 0.4) + (energy_score * 0.6)) * 10)
+    sprint_time = 45 if capacity > 70 else (25 if capacity > 40 else 15)
+    rest_time = 10 if sprint_time == 45 else 5
 
-        selected = MOOD_DATABASE[st.session_state.selected_mood]
+    st.divider()
+    st.subheader("🎯 Your Custom Focus Strategy")
 
-        st.markdown(f"### {selected['title']}")
-        st.markdown(f"**Reality Check:**\n{selected['verdict']}")
-        st.markdown(f"**First Micro-Step:**\n{selected['action']}")
-        st.markdown(f"**Recommended Pace:**\nWork in **{sprint_time}-minute focus blocks** followed by **{rest_time}-minute total breaks** across your {target_hours}-hour session.")
+    # Metrics Layout
+    m_col1, m_col2, m_col3 = st.columns(3)
+    m_col1.metric("Focus Capacity", f"{capacity}%")
+    m_col2.metric("Sprint Duration", f"{sprint_time} min")
+    m_col3.metric("Rest Interval", f"{rest_time} min")
+
+    # Display Grounded Reassuring Response
+    st.markdown(f"### {mood_data['title']}")
+    st.markdown(f"**🌱 Emotional Analysis:**\n{mood_data['verdict']}")
+    st.markdown(f"**⚡ Recommended Micro-Action:**\n{mood_data['action']}")
+    st.markdown(f"**⏱️ Sprint Pace:**\nWork in gentle **{sprint_time}-minute focus blocks** with **{rest_time}-minute rest breaks** over your target {target_hours} hours.")
