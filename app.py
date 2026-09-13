@@ -15,7 +15,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 1. TEACHER'S ML MODEL BACKEND
+# 1. ML MODEL BACKEND
 # ---------------------------------------------------------
 @st.cache_resource
 def train_focus_model():
