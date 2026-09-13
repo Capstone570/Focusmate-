@@ -1,12 +1,10 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
 st.set_page_config(page_title="FocusMate", page_icon="🔮", layout="wide")
 
-# Hide standard Streamlit chrome to retain custom UI presentation
 st.markdown("""
     <style>
         .block-container { padding: 0 !important; }
@@ -17,13 +15,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 1. TEACHER'S ML MODEL SETUP (Backend Engine)
+# 1. TEACHER'S ML MODEL BACKEND
 # ---------------------------------------------------------
 @st.cache_resource
 def train_focus_model():
-    # Synthetic training data representing user state inputs
     # Features: [mood_code, sleep_score, energy_level, task_difficulty]
-    # Mood codes: 0: Stressed, 1: Tired, 2: Distracted, 3: Happy
     X_train = np.array([
         [0, 3, 3, 8], [0, 4, 2, 9], [1, 2, 4, 7], [1, 5, 3, 6],
         [2, 6, 5, 8], [2, 7, 6, 5], [3, 8, 9, 4], [3, 9, 8, 3],
@@ -43,31 +39,9 @@ def train_focus_model():
 ml_model = train_focus_model()
 
 # ---------------------------------------------------------
-# 2. STREAMLIT SIDEBAR CONTROLS (ML Inputs)
+# 2. APPLICATION FRONTEND CODE WITH FULL ANIMATION & UI
 # ---------------------------------------------------------
-st.sidebar.title("🤖 ML Model Parameters")
-st.sidebar.markdown("Configure the inputs required for the teacher's Machine Learning model:")
-
-mood = st.sidebar.selectbox("Current Mood", ["Stressed / Anxious", "Tired / Low Energy", "Distracted / Restless", "Happy / Motivated"])
-sleep = st.sidebar.slider("Sleep Quality (1-10)", 1, 10, 7)
-energy = st.sidebar.slider("Energy Level (1-10)", 1, 10, 8)
-difficulty = st.sidebar.slider("Task Difficulty (1-10)", 1, 10, 6)
-task_name = st.sidebar.text_input("Task Goal", "Build UI Layout")
-
-# Map inputs to ML format
-mood_map = {"Stressed / Anxious": 0, "Tired / Low Energy": 1, "Distracted / Restless": 2, "Happy / Motivated": 3}
-input_features = np.array([[mood_map[mood], sleep, energy, difficulty]])
-
-# Generate ML Prediction
-prediction = ml_model.predict(input_features)[0]
-predicted_capacity = int(prediction[0])
-predicted_sprint = int(prediction[1])
-predicted_rest = int(prediction[2])
-
-# ---------------------------------------------------------
-# 3. FRONTEND APP WITH INTEGRATED ML PREDICTIONS
-# ---------------------------------------------------------
-app_code = f"""
+app_code = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,104 +51,509 @@ app_code = f"""
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        body {{ font-family: 'Plus Jakarta Sans', sans-serif; background: #0f111a; color: #f8fafc; overflow-x: hidden; min-height: 100vh; margin: 0; }}
-        .glass-card {{ background: rgba(22, 24, 38, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(192, 132, 252, 0.2); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4); }}
-        .glow-title {{ background: linear-gradient(135deg, #e9d5ff 0%, #c084fc 50%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }}
-        canvas {{ pointer-events: none; }}
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #0f111a;
+            color: #f8fafc;
+            overflow-x: hidden;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .glass-card {
+            background: rgba(22, 24, 38, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(192, 132, 252, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .glow-title {
+            background: linear-gradient(135deg, #e9d5ff 0%, #c084fc 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mood-btn.active {
+            border-color: #c084fc !important;
+            background-color: rgba(147, 51, 234, 0.3) !important;
+            box-shadow: 0 0 12px rgba(192, 132, 252, 0.3);
+        }
+
+        canvas {
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="relative flex flex-col justify-between items-center min-h-screen p-6">
 
     <canvas id="stage" class="fixed inset-0 w-full h-full z-20"></canvas>
 
-    <!-- WELCOME SCREEN -->
+    <!-- SCREEN 1: WELCOME SCREEN -->
     <div id="welcome-screen" class="relative z-10 flex flex-col items-center justify-center min-h-screen text-center w-full max-w-2xl mx-auto py-8">
         <h1 class="text-6xl font-extrabold tracking-tight glow-title mb-2">FocusMate</h1>
         <p class="text-slate-400 text-lg mb-10">Your AI-Powered Deep Work Companion</p>
+
         <div id="speech-bubble" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-200 to-pink-200 text-slate-900 font-bold text-xl px-10 py-4 rounded-2xl shadow-lg relative mb-12">
             "Hi! Welcome to FocusMate!" ✨
         </div>
+
         <button id="dive-btn" onclick="startFlightSequence()" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-xl px-10 py-4 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer mt-24">
             Let's Dive In! 🚀
         </button>
     </div>
 
-    <!-- WORKSPACE SCREEN -->
+    <!-- SCREEN 2: WORKSPACE -->
     <div id="workspace-screen" class="hidden relative z-10 w-full max-w-4xl mx-auto py-12">
         <div class="glass-card rounded-3xl p-6 mb-8 text-center relative">
             <h2 class="text-3xl font-bold glow-title mb-2">Interactive Mission Center</h2>
-            <p class="text-pink-200 font-semibold text-lg">"RandomForest ML Model outputs loaded."</p>
+            <p id="guide-text" class="text-pink-200 font-semibold text-lg">"Configure your parameters to run the ML recommendation engine."</p>
         </div>
 
-        <div class="glass-card rounded-3xl p-8 border border-purple-500/30">
-            <h3 class="text-2xl font-bold glow-title mb-4 text-center">🎯 ML Strategy & Action Plan</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
-                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
-                    <span class="block text-slate-400 text-sm">Predicted Focus Capacity</span>
-                    <span class="text-3xl font-extrabold text-purple-400">{predicted_capacity}%</span>
-                </div>
-                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
-                    <span class="block text-slate-400 text-sm">ML Recommended Sprint</span>
-                    <span class="text-3xl font-extrabold text-pink-400">{predicted_sprint} min</span>
-                </div>
-                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
-                    <span class="block text-slate-400 text-sm">Optimal Rest Interval</span>
-                    <span class="text-3xl font-extrabold text-sky-400">{predicted_rest} min</span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 1. MOOD SELECTOR -->
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-purple-400 md:col-span-2">
+                <label class="block text-purple-300 font-bold mb-1 text-lg">🧠 1. Current State of Mind</label>
+                <p class="text-slate-400 text-xs mb-3">Select your current mental state:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <button type="button" id="btn-stressed" onclick="selectMood('stressed', 0)" class="mood-btn active bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 text-slate-200 text-xs font-semibold py-3 px-3 rounded-xl transition-all text-center">
+                        😰 Stressed / Anxious
+                    </button>
+                    <button type="button" id="btn-tired" onclick="selectMood('tired', 1)" class="mood-btn bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 text-slate-200 text-xs font-semibold py-3 px-3 rounded-xl transition-all text-center">
+                        🥱 Tired / Low Energy
+                    </button>
+                    <button type="button" id="btn-distracted" onclick="selectMood('distracted', 2)" class="mood-btn bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 text-slate-200 text-xs font-semibold py-3 px-3 rounded-xl transition-all text-center">
+                        📱 Distracted / Restless
+                    </button>
+                    <button type="button" id="btn-happy" onclick="selectMood('happy', 3)" class="mood-btn bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700 text-slate-200 text-xs font-semibold py-3 px-3 rounded-xl transition-all text-center">
+                        🌟 Happy / Motivated
+                    </button>
                 </div>
             </div>
 
-            <div class="bg-slate-900/80 p-5 rounded-xl border-l-4 border-indigo-400 mb-4">
-                <h4 class="font-bold text-indigo-300 text-lg mb-2">📋 Task Roadmap</h4>
-                <ol class="list-decimal list-inside space-y-2 text-slate-300 text-sm font-medium">
-                    <li>Set up environment for: <strong>{task_name}</strong>.</li>
-                    <li>Execute target effort for {predicted_sprint} minutes.</li>
-                    <li>Take a mandatory {predicted_rest}-minute rest break.</li>
-                </ol>
+            <!-- 2. TASK INPUT & DIFFICULTY -->
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-pink-400 md:col-span-2">
+                <label class="block text-pink-300 font-bold mb-1 text-lg">🎯 2. Primary Task Goal</label>
+                <input id="input-task-name" type="text" placeholder="e.g., Write Biology Notes, Build UI layout..." class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-pink-400 mb-4">
+                
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-indigo-300 font-semibold text-sm">Perceived Difficulty</label>
+                    <span id="badge-difficulty" class="bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 px-3 py-1 rounded-lg font-bold text-xs">6 / 10</span>
+                </div>
+                <input id="input-difficulty" type="range" min="1" max="10" value="6" oninput="updateSliderValue('difficulty', this.value)" class="w-full accent-indigo-400 cursor-pointer">
+            </div>
+
+            <!-- 3. SLEEP QUALITY SLIDER -->
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-sky-400">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-sky-300 font-bold text-lg">😴 3. Sleep Score</label>
+                    <span id="badge-sleep" class="bg-sky-500/20 text-sky-300 border border-sky-400/40 px-3 py-1 rounded-lg font-extrabold text-base">7 / 10</span>
+                </div>
+                <input id="input-sleep" type="range" min="1" max="10" value="7" oninput="updateSliderValue('sleep', this.value)" class="w-full accent-sky-400 cursor-pointer">
+            </div>
+
+            <!-- 4. ENERGY LEVEL SLIDER -->
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-emerald-400">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-emerald-300 font-bold text-lg">⚡ 4. Energy Level</label>
+                    <span id="badge-energy" class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 px-3 py-1 rounded-lg font-extrabold text-base">8 / 10</span>
+                </div>
+                <input id="input-energy" type="range" min="1" max="10" value="8" oninput="updateSliderValue('energy', this.value)" class="w-full accent-emerald-400 cursor-pointer">
+            </div>
+        </div>
+
+        <button onclick="runMLStrategy()" class="w-full mt-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-xl py-5 rounded-2xl shadow-xl hover:opacity-90 transition-all cursor-pointer">
+            ✨ Generate Focus Strategy ✨
+        </button>
+
+        <!-- RESULTS SECTION -->
+        <div id="strategy-result" class="hidden mt-10 space-y-6">
+            <div class="glass-card rounded-3xl p-8 border border-purple-500/30">
+                <h3 class="text-2xl font-bold glow-title mb-4 text-center">🎯 ML Model Strategy Plan</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <span class="block text-slate-400 text-sm">Focus Capacity</span>
+                        <span id="score-capacity" class="text-3xl font-extrabold text-purple-400">85%</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <span class="block text-slate-400 text-sm">Recommended Sprint</span>
+                        <span id="score-sprint" class="text-3xl font-extrabold text-pink-400">25 min</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <span class="block text-slate-400 text-sm">Optimal Rest Interval</span>
+                        <span id="score-rest" class="text-3xl font-extrabold text-sky-400">5 min</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 p-5 rounded-xl border-l-4 border-indigo-400 mb-4">
+                    <h4 class="font-bold text-indigo-300 text-lg mb-2">📋 Action Roadmap</h4>
+                    <ol id="task-steps-list" class="list-decimal list-inside space-y-2 text-slate-300 text-sm font-medium">
+                    </ol>
+                </div>
+
+                <!-- TIMER & AUDIO -->
+                <div class="bg-gradient-to-r from-slate-900 to-purple-950 p-6 rounded-2xl border border-purple-500/30 text-center mb-6">
+                    <span class="text-xs uppercase tracking-widest text-slate-400 font-semibold">Active Execution Suite</span>
+                    <div id="timer-display" class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-300 my-3">25:00</div>
+                    
+                    <div class="flex justify-center gap-3 mb-4">
+                        <button id="timer-btn" onclick="toggleTimer()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all">Start Sprint</button>
+                        <button onclick="resetTimer()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-4 py-2 rounded-xl text-sm transition-all">Reset</button>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-2 text-xs text-slate-400 border-t border-slate-800 pt-3">
+                        <span>🔊 Soundscape:</span>
+                        <select id="audio-select" onchange="changeAudioSource()" class="bg-slate-900 text-purple-300 font-semibold rounded-lg px-2 py-1 border border-slate-700 focus:outline-none">
+                            <option value="binaural">Alpha Binaural Beats (Focus)</option>
+                            <option value="rain">Calming Heavy Rain (Stress Relief)</option>
+                            <option value="white">White Noise (Distraction Blocking)</option>
+                        </select>
+                        <button onclick="toggleAudio()" id="audio-btn" class="text-pink-400 font-bold ml-2 underline">Play Sound</button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
+                    <div>
+                        <span class="block text-slate-400 text-xs font-bold uppercase">Daily Streak</span>
+                        <span id="streak-count" class="text-2xl font-extrabold text-emerald-400">🔥 1 Day</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="block text-slate-400 text-xs font-bold uppercase">Completed Sprints</span>
+                        <span id="sprint-count" class="text-2xl font-extrabold text-sky-400">0 Sprints</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <audio id="ambient-audio" loop></audio>
+
     <script>
+        let moodCode = 0;
+        let selectedMoodState = 'stressed';
+        let timerInterval = null;
+        let timeRemaining = 1500;
+        let isTimerRunning = false;
+        let audioPlaying = false;
+        let sprintsCompleted = 0;
+        let currentSprintDuration = 25;
+
+        const soundUrls = {
+            binaural: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
+            rain: "https://cdn.pixabay.com/download/audio/2021/09/06/audio_8a287e07eb.mp3",
+            white: "https://cdn.pixabay.com/download/audio/2022/03/24/audio_c8c8731f82.mp3"
+        };
+
+        function selectMood(mood, code) {
+            selectedMoodState = mood;
+            moodCode = code;
+            document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${mood}`).classList.add('active');
+        }
+
+        function updateSliderValue(id, value) {
+            document.getElementById(`badge-${id}`).innerText = `${value} / 10`;
+        }
+
+        // CANVAS & ROBOT ENGINE
         const canvas = document.getElementById('stage');
         const ctx = canvas.getContext('2d');
-        function resizeCanvas() {{ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }}
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        const robot = {{ x: window.innerWidth / 2, y: -150 }};
-        function drawRobot(x, y) {{
-            ctx.save(); ctx.translate(x, y);
-            ctx.fillStyle = '#c084fc'; ctx.beginPath(); ctx.roundRect(-45, -42, 90, 64, 20); ctx.fill();
-            ctx.fillStyle = '#1e1b2e'; ctx.beginPath(); ctx.roundRect(-35, -32, 70, 44, 12); ctx.fill();
-            ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(-16, -10, 7, 0, Math.PI * 2); ctx.arc(16, -10, 7, 0, Math.PI * 2); ctx.fill();
-            ctx.restore();
-        }}
+        const robot = { x: window.innerWidth / 2, y: -150 };
+        const particles = [];
 
-        function animate() {{
+        // SMOKE AND THRUSTER AIR ENGINE
+        function createSmokeParticle(x, y) {
+            particles.push({
+                x: x + (Math.random() * 16 - 8),
+                y: y,
+                vx: Math.random() * 3 - 1.5,
+                vy: Math.random() * 5 + 3,
+                radius: Math.random() * 10 + 5,
+                alpha: 0.8,
+                color: Math.random() > 0.4 ? '#f472b6' : '#c084fc'
+            });
+        }
+
+        function drawRobot(x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // Aura Glow
+            const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, 90);
+            grad.addColorStop(0, 'rgba(192, 132, 252, 0.35)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, 90, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Antenna
+            ctx.fillStyle = '#f472b6';
+            ctx.beginPath();
+            ctx.arc(0, -65, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, -57);
+            ctx.lineTo(0, -42);
+            ctx.stroke();
+
+            // Head
+            ctx.fillStyle = '#c084fc';
+            ctx.beginPath();
+            ctx.roundRect(-45, -42, 90, 64, 20);
+            ctx.fill();
+
+            // Face
+            ctx.fillStyle = '#1e1b2e';
+            ctx.beginPath();
+            ctx.roundRect(-35, -32, 70, 44, 12);
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(-16, -10, 7, 0, Math.PI * 2);
+            ctx.arc(16, -10, 7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cheeks
+            ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
+            ctx.beginPath();
+            ctx.arc(-22, 4, 5, 0, Math.PI * 2);
+            ctx.arc(22, 4, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Body
+            ctx.fillStyle = '#a855f7';
+            ctx.beginPath();
+            ctx.roundRect(-28, 28, 56, 40, 14);
+            ctx.fill();
+
+            // Core
+            ctx.fillStyle = '#f472b6';
+            ctx.beginPath();
+            ctx.arc(0, 48, 7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hands
+            ctx.fillStyle = '#c084fc';
+            ctx.beginPath();
+            ctx.arc(-40, 42, 9, 0, Math.PI * 2);
+            ctx.arc(40, 42, 9, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Legs
+            ctx.fillStyle = '#8b5cf6';
+            ctx.beginPath();
+            ctx.roundRect(-20, 68, 14, 22, 6);
+            ctx.roundRect(6, 68, 14, 22, 6);
+            ctx.fill();
+
+            // Feet
+            ctx.fillStyle = '#f472b6';
+            ctx.beginPath();
+            ctx.roundRect(-22, 88, 18, 10, 4);
+            ctx.roundRect(4, 88, 18, 10, 4);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        let frame = 0;
+        let isFlying = false;
+
+        function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawRobot(robot.x, robot.y);
+            frame += 0.04;
+            const hoverY = robot.y + (isFlying ? 0 : Math.sin(frame) * 8);
+
+            if (isFlying) {
+                // Thruster particle emissions from feet
+                for (let i = 0; i < 4; i++) {
+                    createSmokeParticle(robot.x - 12, hoverY + 98);
+                    createSmokeParticle(robot.x + 12, hoverY + 98);
+                }
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.02;
+                p.radius += 0.3;
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            drawRobot(robot.x, hoverY);
             requestAnimationFrame(animate);
-        }}
+        }
         animate();
 
-        window.addEventListener('DOMContentLoaded', () => {{
-            gsap.to(robot, {{ y: window.innerHeight / 2 - 20, duration: 1.8, ease: "back.out(1.4)", onComplete: () => {{
-                gsap.to('#speech-bubble', {{ opacity: 1, y: 0, duration: 0.6 }});
-                gsap.to('#dive-btn', {{ opacity: 1, y: 0, duration: 0.6, delay: 0.2 }});
-            }} }});
-        }});
+        window.addEventListener('DOMContentLoaded', () => {
+            gsap.to(robot, {
+                y: window.innerHeight / 2 - 20,
+                duration: 1.8,
+                ease: "back.out(1.4)",
+                onComplete: () => {
+                    gsap.to('#speech-bubble', { opacity: 1, y: 0, duration: 0.6 });
+                    gsap.to('#dive-btn', { opacity: 1, y: 0, duration: 0.6, delay: 0.2 });
+                }
+            });
+        });
 
-        function startFlightSequence() {{
-            gsap.to('#welcome-screen', {{ opacity: 0, duration: 0.4 }});
-            gsap.to(robot, {{ y: -300, duration: 1.2, ease: "power2.in", onComplete: () => {{
-                document.getElementById('welcome-screen').classList.add('hidden');
-                document.getElementById('workspace-screen').classList.remove('hidden');
-                const rect = document.querySelector('#workspace-screen .glass-card').getBoundingClientRect();
-                robot.x = rect.right - 40;
-                gsap.to(robot, {{ y: rect.top + 30, duration: 1, ease: "bounce.out" }});
-            }} }});
-        }}
+        function startFlightSequence() {
+            isFlying = true;
+            gsap.to('#welcome-screen', { opacity: 0, duration: 0.4 });
+            gsap.to(robot, {
+                y: -300,
+                duration: 1.2,
+                ease: "power2.in",
+                onComplete: () => {
+                    document.getElementById('welcome-screen').classList.add('hidden');
+                    document.getElementById('workspace-screen').classList.remove('hidden');
+                    
+                    const workspaceCard = document.querySelector('#workspace-screen .glass-card');
+                    const rect = workspaceCard.getBoundingClientRect();
+                    
+                    robot.x = rect.right - 20;
+                    robot.y = -100;
+                    gsap.to(robot, {
+                        y: rect.top - 20,
+                        duration: 1.2,
+                        ease: "bounce.out",
+                        onComplete: () => { isFlying = false; }
+                    });
+                }
+            });
+        }
+
+        function runMLStrategy() {
+            const sleep = parseInt(document.getElementById('input-sleep').value);
+            const energy = parseInt(document.getElementById('input-energy').value);
+            const difficulty = parseInt(document.getElementById('input-difficulty').value);
+            const rawTask = document.getElementById('input-task-name').value.trim();
+            const taskName = rawTask || "Primary Goal";
+
+            let capacity = Math.round(((sleep * 0.4) + (energy * 0.6)) * 10);
+            let sprintTime = 25;
+            if (capacity >= 75 && difficulty <= 7) sprintTime = 45;
+            else if (capacity < 45 || difficulty >= 8) sprintTime = 15;
+
+            currentSprintDuration = sprintTime;
+            timeRemaining = sprintTime * 60;
+            updateTimerDisplay();
+
+            let restTime = sprintTime === 45 ? 10 : 5;
+
+            document.getElementById('score-capacity').innerText = capacity + '%';
+            document.getElementById('score-sprint').innerText = sprintTime + ' min';
+            document.getElementById('score-rest').innerText = restTime + ' min';
+
+            const listContainer = document.getElementById('task-steps-list');
+            listContainer.innerHTML = `
+                <li>Set up workspace and open resources for: <strong>${taskName}</strong>.</li>
+                <li>Execute core effort for ${sprintTime} minutes.</li>
+                <li>Review progress and take a ${restTime}-minute rest break.</li>
+            `;
+
+            document.getElementById('guide-text').innerText = '"ML calculations complete!"';
+            const resultDiv = document.getElementById('strategy-result');
+            resultDiv.classList.remove('hidden');
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeRemaining / 60);
+            const secs = timeRemaining % 60;
+            document.getElementById('timer-display').innerText = 
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('timer-btn');
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                btn.innerText = "Resume Sprint";
+                btn.className = "bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all";
+            } else {
+                isTimerRunning = true;
+                btn.innerText = "Pause";
+                btn.className = "bg-pink-600 hover:bg-pink-500 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all";
+                timerInterval = setInterval(() => {
+                    if (timeRemaining > 0) {
+                        timeRemaining--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isTimerRunning = false;
+                        sprintsCompleted++;
+                        document.getElementById('sprint-count').innerText = `${sprintsCompleted} Sprints`;
+                        alert("🎉 Sprint Completed!");
+                        resetTimer();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timeRemaining = currentSprintDuration * 60;
+            updateTimerDisplay();
+            const btn = document.getElementById('timer-btn');
+            btn.innerText = "Start Sprint";
+            btn.className = "bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all";
+        }
+
+        function toggleAudio() {
+            const audio = document.getElementById('ambient-audio');
+            const btn = document.getElementById('audio-btn');
+            const selected = document.getElementById('audio-select').value;
+
+            if (audioPlaying) {
+                audio.pause();
+                audioPlaying = false;
+                btn.innerText = "Play Sound";
+            } else {
+                audio.src = soundUrls[selected];
+                audio.play();
+                audioPlaying = true;
+                btn.innerText = "Pause Sound";
+            }
+        }
+
+        function changeAudioSource() {
+            if (audioPlaying) {
+                const audio = document.getElementById('ambient-audio');
+                const selected = document.getElementById('audio-select').value;
+                audio.src = soundUrls[selected];
+                audio.play();
+            }
+        }
     </script>
 </body>
 </html>
