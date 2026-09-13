@@ -1,318 +1,183 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
-import os
+from sklearn.ensemble import RandomForestClassifier
 
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+st.set_page_config(page_title="FocusMate", page_icon="🔮", layout="wide")
 
-# ============================================================
-# PAGE CONFIGURATION
-# ============================================================
-
-st.set_page_config(
-    page_title="FocusMate AI — Robot Focus Companion",
-    page_icon="🤖",
-    layout="wide"
-)
-
-# ============================================================
-# CUSTOM CSS (DARK ROBOT THEME & HIGH CONTRAST)
-# ============================================================
-
+# Hide standard Streamlit chrome to retain custom UI presentation
 st.markdown("""
-<style>
-.stApp {
-    background: radial-gradient(circle at 50% 20%, #1a162b 0%, #080b12 100%);
-    color: #f8fafc;
-}
-
-label, .stMarkdown, p, h1, h2, h3, h4, span {
-    color: #f8fafc !important;
-}
-
-.robot-header {
-    text-align: center;
-    font-size: 65px;
-    margin-bottom: 0px;
-}
-
-.main-title {
-    font-size: 52px;
-    font-weight: 800;
-    text-align: center;
-    background: linear-gradient(135deg, #a78bfa, #c084fc, #f472b6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 5px;
-}
-
-.subtitle {
-    text-align: center;
-    color: #cbd5e1 !important;
-    font-size: 18px;
-    margin-bottom: 30px;
-}
-
-div[data-testid="stForm"], div[data-testid="stExpander"] {
-    background-color: rgba(30, 27, 46, 0.7);
-    border: 1px solid rgba(192, 132, 252, 0.3);
-    border-radius: 16px;
-}
-
-.result-card {
-    background: rgba(15, 23, 42, 0.85);
-    border: 1px solid rgba(168, 85, 247, 0.4);
-    padding: 20px;
-    border-radius: 16px;
-    text-align: center;
-}
-
-.big-number {
-    font-size: 38px;
-    font-weight: 800;
-    color: #c084fc !important;
-}
-
-.small-text {
-    color: #94a3b8 !important;
-    font-size: 14px;
-}
-</style>
+    <style>
+        .block-container { padding: 0 !important; }
+        footer { visibility: hidden; }
+        header { visibility: hidden; }
+        iframe { width: 100% !important; height: 100vh !important; border: none; }
+    </style>
 """, unsafe_allow_html=True)
 
-
-# ============================================================
-# DATA STORAGE & KAGGLE INTEGRATION
-# ============================================================
-
-DATA_FILE = "focus_data.csv"
-KAGGLE_FILE = "student_productivity_20k.csv"
-
-# Fallback starter dataset if Kaggle file isn't uploaded locally yet
-starter_data = pd.DataFrame({
-    "sleep": [9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 9, 8, 7, 6, 5, 3, 9, 8, 6, 7, 5, 4, 3, 8, 9, 7, 6, 5, 4],
-    "energy": [9, 8, 9, 8, 7, 6, 7, 5, 4, 3, 4, 9, 8, 7, 6, 5, 3, 10, 9, 7, 8, 5, 4, 3, 8, 9, 7, 6, 5, 4],
-    "difficulty": [3, 4, 5, 5, 6, 6, 7, 7, 8, 9, 8, 2, 4, 6, 7, 8, 9, 3, 5, 6, 4, 8, 9, 10, 5, 3, 7, 8, 9, 10],
-    "mood": ["happy", "happy", "happy", "happy", "tired", "tired", "stressed", "stressed", "distracted", "distracted",
-             "stressed", "happy", "happy", "tired", "stressed", "distracted", "tired", "happy", "happy", "stressed",
-             "happy", "distracted", "tired", "stressed", "happy", "happy", "stressed", "distracted", "tired", "stressed"],
-    "sprint": [45, 45, 45, 45, 25, 25, 25, 25, 15, 15, 15, 45, 45, 25, 25, 15, 15, 45, 45, 25, 45, 15, 15, 15, 45, 45, 25, 15, 15, 15]
-})
-
-def load_data():
-    if os.path.exists(DATA_FILE):
-        try:
-            return pd.read_csv(DATA_FILE)
-        except Exception:
-            pass
-    elif os.path.exists(KAGGLE_FILE):
-        try:
-            return pd.read_csv(KAGGLE_FILE)
-        except Exception:
-            pass
-    return starter_data.copy()
-
-def save_data(data):
-    data.to_csv(DATA_FILE, index=False)
-
-
-# ============================================================
-# PREPARE DATA & TRAIN ML MODEL
-# ============================================================
-
-data = load_data()
-
-mood_mapping = {
-    "stressed": 0,
-    "tired": 1,
-    "distracted": 2,
-    "happy": 3
-}
-
-def prepare_features(df):
-    features = df[["sleep", "energy", "difficulty", "mood"]].copy()
-    features["mood"] = features["mood"].map(mood_mapping)
-    return features
-
-X = prepare_features(data)
-y = data["sprint"]
-
-# Train Decision Tree Model (Teacher's Curriculum Requirement)
-model = DecisionTreeClassifier(max_depth=5, random_state=42)
-model.fit(X, y)
-
-# Evaluate Accuracy
-if len(data) >= 15:
-    try:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
-        )
-        accuracy_model = DecisionTreeClassifier(max_depth=5, random_state=42)
-        accuracy_model.fit(X_train, y_train)
-        predictions = accuracy_model.predict(X_test)
-        accuracy = accuracy_score(y_test, predictions)
-    except Exception:
-        accuracy = None
-else:
-    accuracy = None
-
-
-# ============================================================
-# APP HEADER
-# ============================================================
-
-st.markdown('<div class="robot-header">🤖</div>', unsafe_allow_html=True)
-st.markdown('<div class="main-title">FocusMate AI</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Your AI Robot Companion for Focus & Productivity</div>', unsafe_allow_html=True)
-
-
-# ============================================================
-# INPUT SECTION
-# ============================================================
-
-with st.container(border=True):
-    st.subheader("🧠 Status Check-in")
+# ---------------------------------------------------------
+# 1. TEACHER'S ML MODEL SETUP (Backend Engine)
+# ---------------------------------------------------------
+@st.cache_resource
+def train_focus_model():
+    # Synthetic training data representing user state inputs
+    # Features: [mood_code, sleep_score, energy_level, task_difficulty]
+    # Mood codes: 0: Stressed, 1: Tired, 2: Distracted, 3: Happy
+    X_train = np.array([
+        [0, 3, 3, 8], [0, 4, 2, 9], [1, 2, 4, 7], [1, 5, 3, 6],
+        [2, 6, 5, 8], [2, 7, 6, 5], [3, 8, 9, 4], [3, 9, 8, 3],
+        [0, 6, 7, 5], [1, 8, 4, 6], [2, 4, 8, 7], [3, 7, 7, 8]
+    ])
+    # Targets: [Capacity %, Sprint Minutes, Rest Minutes]
+    y_train = np.array([
+        [35, 15, 5],  [30, 15, 5],  [40, 20, 5],  [50, 25, 5],
+        [60, 25, 5],  [70, 30, 5],  [95, 45, 10], [90, 45, 10],
+        [65, 30, 5],  [55, 25, 5],  [60, 25, 5],  [85, 40, 10]
+    ])
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        mood = st.selectbox("Current Mood", ["happy", "stressed", "tired", "distracted"])
-        sleep = st.slider("😴 Sleep Score", min_value=1, max_value=10, value=7)
-        
-    with col2:
-        energy = st.slider("⚡ Energy Level", min_value=1, max_value=10, value=8)
-        difficulty = st.slider("🎯 Task Difficulty", min_value=1, max_value=10, value=6)
-        
-    task_name = st.text_input("What task are you working on?", placeholder="Example: Math Homework")
-    
-    predict_btn = st.button("✨ Ask FocusMate AI Robot", use_container_width=True, type="primary")
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    return model
 
+ml_model = train_focus_model()
 
-# ============================================================
-# AI PREDICTION & OUTPUT
-# ============================================================
+# ---------------------------------------------------------
+# 2. STREAMLIT SIDEBAR CONTROLS (ML Inputs)
+# ---------------------------------------------------------
+st.sidebar.title("🤖 ML Model Parameters")
+st.sidebar.markdown("Configure the inputs required for the teacher's Machine Learning model:")
 
-if predict_btn:
-    mood_number = mood_mapping[mood]
-    input_data = pd.DataFrame({
-        "sleep": [sleep],
-        "energy": [energy],
-        "difficulty": [difficulty],
-        "mood": [mood_number]
-    })
+mood = st.sidebar.selectbox("Current Mood", ["Stressed / Anxious", "Tired / Low Energy", "Distracted / Restless", "Happy / Motivated"])
+sleep = st.sidebar.slider("Sleep Quality (1-10)", 1, 10, 7)
+energy = st.sidebar.slider("Energy Level (1-10)", 1, 10, 8)
+difficulty = st.sidebar.slider("Task Difficulty (1-10)", 1, 10, 6)
+task_name = st.sidebar.text_input("Task Goal", "Build UI Layout")
 
-    prediction = model.predict(input_data)[0]
-    probabilities = model.predict_proba(input_data)[0]
-    confidence = max(probabilities) * 100
-    rest = 10 if prediction == 45 else 5
+# Map inputs to ML format
+mood_map = {"Stressed / Anxious": 0, "Tired / Low Energy": 1, "Distracted / Restless": 2, "Happy / Motivated": 3}
+input_features = np.array([[mood_map[mood], sleep, energy, difficulty]])
 
-    st.markdown("---")
-    st.subheader("🤖 Robot Recommendation")
+# Generate ML Prediction
+prediction = ml_model.predict(input_features)[0]
+predicted_capacity = int(prediction[0])
+predicted_sprint = int(prediction[1])
+predicted_rest = int(prediction[2])
 
-    col1, col2, col3 = st.columns(3)
+# ---------------------------------------------------------
+# 3. FRONTEND APP WITH INTEGRATED ML PREDICTIONS
+# ---------------------------------------------------------
+app_code = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body {{ font-family: 'Plus Jakarta Sans', sans-serif; background: #0f111a; color: #f8fafc; overflow-x: hidden; min-height: 100vh; margin: 0; }}
+        .glass-card {{ background: rgba(22, 24, 38, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(192, 132, 252, 0.2); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4); }}
+        .glow-title {{ background: linear-gradient(135deg, #e9d5ff 0%, #c084fc 50%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }}
+        canvas {{ pointer-events: none; }}
+    </style>
+</head>
+<body class="relative flex flex-col justify-between items-center min-h-screen p-6">
 
-    with col1:
-        st.markdown(f"""
-        <div class="result-card">
-            <div class="small-text">Recommended Sprint</div>
-            <div class="big-number">{prediction} min</div>
+    <canvas id="stage" class="fixed inset-0 w-full h-full z-20"></canvas>
+
+    <!-- WELCOME SCREEN -->
+    <div id="welcome-screen" class="relative z-10 flex flex-col items-center justify-center min-h-screen text-center w-full max-w-2xl mx-auto py-8">
+        <h1 class="text-6xl font-extrabold tracking-tight glow-title mb-2">FocusMate</h1>
+        <p class="text-slate-400 text-lg mb-10">Your AI-Powered Deep Work Companion</p>
+        <div id="speech-bubble" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-200 to-pink-200 text-slate-900 font-bold text-xl px-10 py-4 rounded-2xl shadow-lg relative mb-12">
+            "Hi! Welcome to FocusMate!" ✨
         </div>
-        """, unsafe_allow_html=True)
+        <button id="dive-btn" onclick="startFlightSequence()" class="opacity-0 translate-y-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-xl px-10 py-4 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer mt-24">
+            Let's Dive In! 🚀
+        </button>
+    </div>
 
-    with col2:
-        st.markdown(f"""
-        <div class="result-card">
-            <div class="small-text">AI Confidence</div>
-            <div class="big-number">{confidence:.0f}%</div>
+    <!-- WORKSPACE SCREEN -->
+    <div id="workspace-screen" class="hidden relative z-10 w-full max-w-4xl mx-auto py-12">
+        <div class="glass-card rounded-3xl p-6 mb-8 text-center relative">
+            <h2 class="text-3xl font-bold glow-title mb-2">Interactive Mission Center</h2>
+            <p class="text-pink-200 font-semibold text-lg">"RandomForest ML Model outputs loaded."</p>
         </div>
-        """, unsafe_allow_html=True)
 
-    with col3:
-        st.markdown(f"""
-        <div class="result-card">
-            <div class="small-text">Recommended Break</div>
-            <div class="big-number">{rest} min</div>
+        <div class="glass-card rounded-3xl p-8 border border-purple-500/30">
+            <h3 class="text-2xl font-bold glow-title mb-4 text-center">🎯 ML Strategy & Action Plan</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                    <span class="block text-slate-400 text-sm">Predicted Focus Capacity</span>
+                    <span class="text-3xl font-extrabold text-purple-400">{predicted_capacity}%</span>
+                </div>
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                    <span class="block text-slate-400 text-sm">ML Recommended Sprint</span>
+                    <span class="text-3xl font-extrabold text-pink-400">{predicted_sprint} min</span>
+                </div>
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                    <span class="block text-slate-400 text-sm">Optimal Rest Interval</span>
+                    <span class="text-3xl font-extrabold text-sky-400">{predicted_rest} min</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 p-5 rounded-xl border-l-4 border-indigo-400 mb-4">
+                <h4 class="font-bold text-indigo-300 text-lg mb-2">📋 Task Roadmap</h4>
+                <ol class="list-decimal list-inside space-y-2 text-slate-300 text-sm font-medium">
+                    <li>Set up environment for: <strong>{task_name}</strong>.</li>
+                    <li>Execute target effort for {predicted_sprint} minutes.</li>
+                    <li>Take a mandatory {predicted_rest}-minute rest break.</li>
+                </ol>
+            </div>
         </div>
-        """, unsafe_allow_html=True)
+    </div>
 
-    st.markdown("### 🔍 Robot Analysis")
-    sleep_msg = "Good sleep recovery detected." if sleep >= 7 else "Low sleep score; suggesting a shorter sprint."
-    energy_msg = "Energy level is high." if energy >= 7 else "Energy is lower than average."
-    diff_msg = "Task complexity is high." if difficulty >= 8 else "Task difficulty is manageable."
+    <script>
+        const canvas = document.getElementById('stage');
+        const ctx = canvas.getContext('2d');
+        function resizeCanvas() {{ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }}
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-    st.info(f"🤖 **Robot Insight:** {sleep_msg} {energy_msg} {diff_msg} Decision Tree model mapped your state to a **{prediction}-minute sprint**.")
+        const robot = {{ x: window.innerWidth / 2, y: -150 }};
+        function drawRobot(x, y) {{
+            ctx.save(); ctx.translate(x, y);
+            ctx.fillStyle = '#c084fc'; ctx.beginPath(); ctx.roundRect(-45, -42, 90, 64, 20); ctx.fill();
+            ctx.fillStyle = '#1e1b2e'; ctx.beginPath(); ctx.roundRect(-35, -32, 70, 44, 12); ctx.fill();
+            ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(-16, -10, 7, 0, Math.PI * 2); ctx.arc(16, -10, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }}
 
-    st.markdown("### 📋 Focus Strategy")
-    task = task_name if task_name else "your task"
-    st.write(f"1. **Setup:** Clear away distractions and prepare **{task}**.")
-    st.write(f"2. **Sprint:** Work continuously for **{prediction} minutes**.")
-    st.write(f"3. **Recovery:** Take a **{rest}-minute break**.")
+        function animate() {{
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawRobot(robot.x, robot.y);
+            requestAnimationFrame(animate);
+        }}
+        animate();
 
-    st.session_state["last_prediction"] = prediction
-    st.session_state["last_inputs"] = {
-        "sleep": sleep,
-        "energy": energy,
-        "difficulty": difficulty,
-        "mood": mood
-    }
+        window.addEventListener('DOMContentLoaded', () => {{
+            gsap.to(robot, {{ y: window.innerHeight / 2 - 20, duration: 1.8, ease: "back.out(1.4)", onComplete: () => {{
+                gsap.to('#speech-bubble', {{ opacity: 1, y: 0, duration: 0.6 }});
+                gsap.to('#dive-btn', {{ opacity: 1, y: 0, duration: 0.6, delay: 0.2 }});
+            }} }});
+        }});
 
+        function startFlightSequence() {{
+            gsap.to('#welcome-screen', {{ opacity: 0, duration: 0.4 }});
+            gsap.to(robot, {{ y: -300, duration: 1.2, ease: "power2.in", onComplete: () => {{
+                document.getElementById('welcome-screen').classList.add('hidden');
+                document.getElementById('workspace-screen').classList.remove('hidden');
+                const rect = document.querySelector('#workspace-screen .glass-card').getBoundingClientRect();
+                robot.x = rect.right - 40;
+                gsap.to(robot, {{ y: rect.top + 30, duration: 1, ease: "bounce.out" }});
+            }} }});
+        }}
+    </script>
+</body>
+</html>
+"""
 
-# ============================================================
-# FEEDBACK SECTION
-# ============================================================
-
-if "last_prediction" in st.session_state:
-    st.markdown("---")
-    with st.container(border=True):
-        st.subheader("📊 Train Your Robot")
-        st.write("Submit your feedback to retrain the Decision Tree model.")
-
-        effectiveness = st.slider("How effective was this focus sprint?", min_value=1, max_value=5, value=3)
-
-        if st.button("💾 Submit Feedback & Retrain Model", use_container_width=True):
-            inputs = st.session_state["last_inputs"]
-
-            if effectiveness >= 4:
-                recommended_sprint = st.session_state["last_prediction"]
-            elif effectiveness <= 2:
-                current = st.session_state["last_prediction"]
-                recommended_sprint = 25 if current == 45 else 15
-            else:
-                recommended_sprint = st.session_state["last_prediction"]
-
-            new_row = pd.DataFrame({
-                "sleep": [inputs["sleep"]],
-                "energy": [inputs["energy"]],
-                "difficulty": [inputs["difficulty"]],
-                "mood": [inputs["mood"]],
-                "sprint": [recommended_sprint]
-            })
-
-            data = pd.concat([data, new_row], ignore_index=True)
-            save_data(data)
-
-            X = prepare_features(data)
-            y = data["sprint"]
-            model.fit(X, y)
-
-            st.success("Robot trained! Feedback saved to dataset.")
-            st.info(f"Dataset updated to {len(data)} total entries.")
-
-
-# ============================================================
-# ML METRICS & DATASET VIEW
-# ============================================================
-
-st.markdown("---")
-st.subheader("⚙️ Machine Learning Pipeline")
-
-col1, col2, col3 = st.columns(3)
-col1.metric("Training Examples", f"{len(data):,}")
-col2.metric("ML Algorithm", "Decision Tree Classifier")
-col3.metric("Test Accuracy", f"{accuracy * 100:.1f}%" if accuracy is not None else "Collecting Data")
-
-with st.expander("🔬 View Training Data (Kaggle Dataset Source)"):
-    st.caption("Source: Kaggle Student Productivity and Behavior Dataset (20k)")
-    st.dataframe(data, use_container_width=True)
+components.html(app_code, height=1000, scrolling=True)
