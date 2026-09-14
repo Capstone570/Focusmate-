@@ -1,45 +1,76 @@
+import numpy as np
 import streamlit as st
 import streamlit.components.v1 as components
-import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
+# Page Setup
 st.set_page_config(page_title="FocusMate", page_icon="🔮", layout="wide")
 
-st.markdown("""
+# CSS to make the canvas and app fill the viewport cleanly
+st.markdown(
+    """
     <style>
         .block-container { padding: 0 !important; }
         footer { visibility: hidden; }
         header { visibility: hidden; }
         iframe { width: 100% !important; height: 100vh !important; border: none; }
     </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
+
 
 # ---------------------------------------------------------
-# 1. ML MODEL BACKEND
+# 1. DATASET & MACHINE LEARNING MODEL (PYTHON BACKEND)
 # ---------------------------------------------------------
 @st.cache_resource
 def train_focus_model():
     # Features: [mood_code, sleep_score, energy_level, task_difficulty]
-    X_train = np.array([
-        [0, 3, 3, 8], [0, 4, 2, 9], [1, 2, 4, 7], [1, 5, 3, 6],
-        [2, 6, 5, 8], [2, 7, 6, 5], [3, 8, 9, 4], [3, 9, 8, 3],
-        [0, 6, 7, 5], [1, 8, 4, 6], [2, 4, 8, 7], [3, 7, 7, 8]
-    ])
+    X_train = np.array(
+        [
+            [0, 3, 3, 8],
+            [0, 4, 2, 9],
+            [1, 2, 4, 7],
+            [1, 5, 3, 6],
+            [2, 6, 5, 8],
+            [2, 7, 6, 5],
+            [3, 8, 9, 4],
+            [3, 9, 8, 3],
+            [0, 6, 7, 5],
+            [1, 8, 4, 6],
+            [2, 4, 8, 7],
+            [3, 7, 7, 8],
+        ]
+    )
+
     # Targets: [Capacity %, Sprint Minutes, Rest Minutes]
-    y_train = np.array([
-        [35, 15, 5],  [30, 15, 5],  [40, 20, 5],  [50, 25, 5],
-        [60, 25, 5],  [70, 30, 5],  [95, 45, 10], [90, 45, 10],
-        [65, 30, 5],  [55, 25, 5],  [60, 25, 5],  [85, 40, 10]
-    ])
-    
+    y_train = np.array(
+        [
+            [35, 15, 5],
+            [30, 15, 5],
+            [40, 20, 5],
+            [50, 25, 5],
+            [60, 25, 5],
+            [70, 30, 5],
+            [95, 45, 10],
+            [90, 45, 10],
+            [65, 30, 5],
+            [55, 25, 5],
+            [60, 25, 5],
+            [85, 40, 10],
+        ]
+    )
+
     model = RandomForestClassifier(n_estimators=100, random_state=42)
     model.fit(X_train, y_train)
     return model
 
+
 ml_model = train_focus_model()
 
+
 # ---------------------------------------------------------
-# 2. APPLICATION FRONTEND CODE WITH FULL ANIMATION & UI
+# 2. FRONTEND WITH CANVAS ANIMATIONS & INTERACTION
 # ---------------------------------------------------------
 app_code = """
 <!DOCTYPE html>
@@ -270,7 +301,6 @@ app_code = """
         const robot = { x: window.innerWidth / 2, y: -150 };
         const particles = [];
 
-        // SMOKE AND THRUSTER AIR ENGINE
         function createSmokeParticle(x, y) {
             particles.push({
                 x: x + (Math.random() * 16 - 8),
@@ -380,7 +410,6 @@ app_code = """
             const hoverY = robot.y + (isFlying ? 0 : Math.sin(frame) * 8);
 
             if (isFlying) {
-                // Thruster particle emissions from feet
                 for (let i = 0; i < 4; i++) {
                     createSmokeParticle(robot.x - 12, hoverY + 98);
                     createSmokeParticle(robot.x + 12, hoverY + 98);
