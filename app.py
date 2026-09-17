@@ -33,6 +33,7 @@ ml_model = train_ml_models()
 
 params = st.query_params
 start_page = params.get("page", "1")
+task_name = params.get("task", "Primary Focus Sprint")
 capacity_val, sprint_val, rest_val = 85, 25, 5
 
 if "predict" in params:
@@ -141,7 +142,7 @@ app_code = f"""
             <!-- 2. TASK INPUT & DIFFICULTY -->
             <div class="glass-card rounded-2xl p-6 border-l-4 border-pink-400 md:col-span-2">
                 <label class="block text-pink-300 font-bold mb-1 text-lg">🎯 2. Primary Task Goal</label>
-                <input id="input-task-name" type="text" placeholder="e.g., Write Chapter 1 of Biology Notes, Build UI layout..." class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-pink-400 mb-4">
+                <input id="input-task-name" type="text" placeholder="e.g., Write Chapter 1 of Biology Notes, Build UI layout..." value="{task_name}" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-pink-400 mb-4">
                 
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-indigo-300 font-semibold text-sm">Perceived Difficulty</label>
@@ -195,11 +196,11 @@ app_code = f"""
 
                 <!-- DYNAMIC TASK BREAKDOWN -->
                 <div class="bg-slate-900/80 p-5 rounded-xl border-l-4 border-indigo-400 mb-4">
-                    <h4 class="font-bold text-indigo-300 text-lg mb-2">📋 AI Action Roadmap (3 Steps)</h4>
+                    <h4 class="font-bold text-indigo-300 text-lg mb-2">📋 AI Action Roadmap for "{task_name}"</h4>
                     <ol id="task-steps-list" class="list-decimal list-inside space-y-2 text-slate-300 text-sm font-medium">
-                        <li>Set up workspace and open resources.</li>
-                        <li>Execute core effort for {sprint_val} minutes.</li>
-                        <li>Review progress and enter a {rest_val}-minute break.</li>
+                        <li>Eliminate all distractions and clear your workspace for <strong>{task_name}</strong>.</li>
+                        <li>Execute high-intensity focus for <strong>{sprint_val} minutes</strong> without context switching.</li>
+                        <li>Step away immediately for a <strong>{rest_val}-minute recharge</strong> session.</li>
                     </ol>
                 </div>
 
@@ -446,12 +447,15 @@ app_code = f"""
 
         // STRATEGY & TASK BREAKDOWN LOGIC
         function generateStrategy() {{
-            const sleep = parseInt(document.getElementById('input-sleep').value);
-            const energy = parseInt(document.getElementById('input-energy').value);
-            const difficulty = parseInt(document.getElementById('input-difficulty').value);
-            const taskName = document.getElementById('input-task-name').value.trim() || "Primary Goal";
+            const sleep = document.getElementById('input-sleep').value;
+            const energy = document.getElementById('input-energy').value;
+            const difficulty = document.getElementById('input-difficulty').value;
+            const taskName = encodeURIComponent(document.getElementById('input-task-name').value.trim() || "Primary Focus Sprint");
 
-            window.parent.location.href = `?predict=true&page=2&sleep=${{sleep}}&energy=${{energy}}&diff=${{difficulty}}`;
+            const targetUrl = `?predict=true&page=2&sleep=${{sleep}}&energy=${{energy}}&diff=${{difficulty}}&task=${{taskName}}`;
+            
+            // Force URL update via top-level window context
+            window.top.location.href = targetUrl;
         }}
 
         // TIMER ENGINE logic
