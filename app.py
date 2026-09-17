@@ -196,11 +196,11 @@ app_code = f"""
 
                 <!-- DYNAMIC TASK BREAKDOWN -->
                 <div class="bg-slate-900/80 p-5 rounded-xl border-l-4 border-indigo-400 mb-4">
-                    <h4 class="font-bold text-indigo-300 text-lg mb-2">📋 AI Action Roadmap for "{task_name}"</h4>
+                    <h4 class="font-bold text-indigo-300 text-lg mb-2">📋 AI Action Roadmap</h4>
                     <ol id="task-steps-list" class="list-decimal list-inside space-y-2 text-slate-300 text-sm font-medium">
-                        <li>Eliminate all distractions and clear your workspace for <strong>{task_name}</strong>.</li>
-                        <li>Execute high-intensity focus for <strong>{sprint_val} minutes</strong> without context switching.</li>
-                        <li>Step away immediately for a <strong>{rest_val}-minute recharge</strong> session.</li>
+                        <li>Eliminate all distractions and clear your workspace for <strong id="step-task-title">{task_name}</strong>.</li>
+                        <li>Execute high-intensity focus for <strong id="step-sprint-time">{sprint_val} minutes</strong> without context switching.</li>
+                        <li>Step away immediately for a <strong id="step-rest-time">{rest_val}-minute recharge</strong> session.</li>
                     </ol>
                 </div>
 
@@ -445,20 +445,38 @@ app_code = f"""
             }});
         }}
 
-        // STRATEGY & TASK BREAKDOWN LOGIC
+        // CLIENT-SIDE INSTANT STRATEGY GENERATION
         function generateStrategy() {{
-            const sleep = document.getElementById('input-sleep').value;
-            const energy = document.getElementById('input-energy').value;
-            const difficulty = document.getElementById('input-difficulty').value;
-            const taskName = encodeURIComponent(document.getElementById('input-task-name').value.trim() || "Primary Focus Sprint");
+            const sleep = parseInt(document.getElementById('input-sleep').value);
+            const energy = parseInt(document.getElementById('input-energy').value);
+            const difficulty = parseInt(document.getElementById('input-difficulty').value);
+            const taskName = document.getElementById('input-task-name').value.trim() || "Primary Focus Sprint";
 
-            const targetUrl = `?predict=true&page=2&sleep=${{sleep}}&energy=${{energy}}&diff=${{difficulty}}&task=${{taskName}}`;
-            
-            // Force URL update via top-level window context
-            window.top.location.href = targetUrl;
+            // Local Calculation Formula
+            const capacity = Math.min(Math.max(Math.round((sleep * 5.0) + (energy * 4.0) - (difficulty * 2.0)), 10), 100);
+            const sprint = Math.min(Math.max(Math.round((capacity * 0.4) - (difficulty * 1.0)), 10), 60);
+            const rest = Math.min(Math.max(Math.round((sprint * 0.25) + (10 - energy) * 0.4), 5), 25);
+
+            // Update DOM Elements directly
+            document.getElementById('score-capacity').innerText = `${{capacity}}%`;
+            document.getElementById('score-sprint').innerText = `${{sprint}} min`;
+            document.getElementById('score-rest').innerText = `${{rest}} min`;
+
+            document.getElementById('step-task-title').innerText = taskName;
+            document.getElementById('step-sprint-time').innerText = `${{sprint}} minutes`;
+            document.getElementById('step-rest-time').innerText = `${{rest}} minutes`;
+
+            currentSprintDuration = sprint;
+            timeRemaining = sprint * 60;
+            updateTimerDisplay();
+
+            // Reveal Strategy Results Container
+            const resultsSection = document.getElementById('strategy-result');
+            resultsSection.classList.remove('hidden');
+            resultsSection.scrollIntoView({{ behavior: 'smooth' }});
         }}
 
-        // TIMER ENGINE logic
+        // TIMER ENGINE LOGIC
         function updateTimerDisplay() {{
             const mins = Math.floor(timeRemaining / 60);
             const secs = timeRemaining % 60;
@@ -503,7 +521,7 @@ app_code = f"""
             btn.className = "bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all";
         }}
 
-        // AMBIENT AUDIO ENGINE logic
+        // AMBIENT AUDIO ENGINE LOGIC
         function toggleAudio() {{
             const audio = document.getElementById('ambient-audio');
             const btn = document.getElementById('audio-btn');
