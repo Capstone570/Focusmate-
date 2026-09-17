@@ -3,33 +3,30 @@ import streamlit.components.v1 as components
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 
-# 1. REMOVE ALL STREAMLIT PADDING/MARGINS FOR FULL SCREEN
+# Config & Streamlit margin reset
 st.set_page_config(page_title="FocusMate", page_icon="🤖", layout="wide")
 
 st.markdown("""
     <style>
-        .block-container { padding: 0rem !important; max-width: 100% !important; }
-        header { visibility: hidden; }
-        footer { visibility: hidden; }
+        .block-container { padding: 0 !important; max-width: 100% !important; }
+        header, footer { visibility: hidden; }
         iframe { width: 100vw !important; height: 100vh !important; border: none !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# 2. SCIKIT-LEARN BACKEND
+# Machine Learning Setup
 @st.cache_resource
 def train_ml_models():
     np.random.seed(42)
-    n_samples = 500
-    hours = np.random.randint(1, 12, n_samples)
-    sleep = np.random.randint(1, 11, n_samples)
-    diff = np.random.randint(1, 11, n_samples)
-    energy = np.random.randint(1, 11, n_samples)
-    X = np.column_stack((hours, sleep, diff, energy))
-
-    capacity = np.clip((sleep * 5.0) + (energy * 4.0) - (diff * 2.0) - (hours * 1.5) + np.random.normal(0, 3, n_samples), 10, 100)
-    sprint = np.clip((capacity * 0.4) - (diff * 1.0) + np.random.normal(0, 2, n_samples), 10, 60)
-    rest = np.clip((sprint * 0.25) + (10 - energy) * 0.4, 5, 25)
-    
+    X = np.column_stack((
+        np.random.randint(1, 12, 500),
+        np.random.randint(1, 11, 500),
+        np.random.randint(1, 11, 500),
+        np.random.randint(1, 11, 500)
+    ))
+    capacity = np.clip((X[:, 1] * 5.0) + (X[:, 3] * 4.0) - (X[:, 2] * 2.0) - (X[:, 0] * 1.5), 10, 100)
+    sprint = np.clip((capacity * 0.4) - (X[:, 2] * 1.0), 10, 60)
+    rest = np.clip((sprint * 0.25) + (10 - X[:, 3]) * 0.4, 5, 25)
     return RandomForestRegressor(n_estimators=50, random_state=42).fit(X, np.column_stack((capacity, sprint, rest)))
 
 ml_model = train_ml_models()
@@ -41,23 +38,20 @@ mind_dump_text = params.get("dump", "I'm stressed, bored, feeling suffocated")
 
 if "predict" in params:
     try:
-        hours = float(params.get("hours", 1))
-        sleep = int(params.get("sleep", 5))
-        diff = int(params.get("diff", 5))
-        energy = int(params.get("energy", 5))
-
-        preds = ml_model.predict(np.array([[hours, sleep, diff, energy]]))[0]
-        capacity_val = int(round(preds[0]))
-        sprint_val = int(round(preds[1]))
-        rest_val = int(round(preds[2]))
+        preds = ml_model.predict(np.array([[
+            float(params.get("hours", 1)),
+            int(params.get("sleep", 5)),
+            int(params.get("diff", 5)),
+            int(params.get("energy", 5))
+        ]]))[0]
+        capacity_val, sprint_val, rest_val = int(round(preds[0])), int(round(preds[1])), int(round(preds[2]))
         start_page = "2"
     except Exception:
         pass
 
-# 3. COMPLETE UI WITH ANIMATIONS AND PARTICLE ENGINE
 html_code = f"""
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -83,47 +77,51 @@ html_code = f"""
         .card-main {{ border: 1px solid rgba(244, 114, 182, 0.3); background: rgba(18, 20, 39, 0.95); border-radius: 1.5rem; }}
         .btn-gradient {{ background: linear-gradient(90deg, #c084fc 0%, #f472b6 100%); }}
 
-        /* FLOATING ROBOT ANIMATION */
-        @keyframes floatRobot {{
-            0% {{ transform: translateY(0px) rotate(0deg); }}
-            50% {{ transform: translateY(-12px) rotate(1.5deg); }}
-            100% {{ transform: translateY(0px) rotate(0deg); }}
+        /* BOBBING / FLOATING ROBOT ANIMATION */
+        @keyframes floatAnim {{
+            0% {{ transform: translateY(0px); }}
+            50% {{ transform: translateY(-10px); }}
+            100% {{ transform: translateY(0px); }}
         }}
         .robot-float {{
-            animation: floatRobot 3.5s ease-in-out infinite;
+            animation: floatAnim 3s ease-in-out infinite;
         }}
 
-        /* GAS/SMOKE PARTICLE STYLING */
-        .gas-particle {{
-            position: absolute;
+        /* PURPLE & PINK GAS/SMOKE PARTICLES */
+        .gas-cloud {{
+            position: fixed;
             border-radius: 50%;
             pointer-events: none;
-            animation: burstOut 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+            animation: smokeBurst 1.2s ease-out forwards;
+            z-index: 99;
         }}
-        @keyframes burstOut {{
-            0% {{ opacity: 1; transform: translate(0, 0) scale(0.4); filter: blur(2px); }}
-            50% {{ opacity: 0.8; filter: blur(6px); }}
-            100% {{ opacity: 0; transform: translate(var(--tx), var(--ty)) scale(3.5); filter: blur(12px); }}
+        @keyframes smokeBurst {{
+            0% {{ opacity: 0.9; transform: translate(0, 0) scale(0.3); filter: blur(4px); }}
+            50% {{ opacity: 0.7; filter: blur(10px); }}
+            100% {{ opacity: 0; transform: translate(var(--dx), var(--dy)) scale(4); filter: blur(20px); }}
         }}
     </style>
 </head>
-<body class="flex flex-col justify-center items-center relative">
+<body class="flex justify-center items-center">
 
-    <div class="w-full max-w-4xl px-4 py-8">
+    <div class="w-full max-w-3xl px-6 py-6">
 
         <!-- PAGE 1: WELCOME SCREEN -->
-        <div id="page-1" class="{'block' if start_page == '1' else 'hidden'} text-center flex flex-col items-center justify-center min-h-[85vh] space-y-6 relative">
-            <h1 class="text-7xl font-extrabold title-gradient">FocusMate</h1>
-            <p class="text-slate-400 text-lg font-medium">Your AI-Powered Deep Work Companion</p>
+        <div id="page-1" class="{'flex' if start_page == '1' else 'hidden'} flex-col items-center justify-center space-y-8 min-h-[90vh]">
             
-            <div class="relative flex flex-col items-center justify-center my-4" id="robot-container">
-                <div class="bg-pink-100/90 text-slate-900 font-extrabold px-6 py-2.5 rounded-2xl shadow-lg border border-pink-300 text-lg mb-6">
-                    <span>"Hi! Welcome to FocusMate!"</span> ✨
+            <div class="text-center space-y-2">
+                <h1 class="text-6xl font-black title-gradient">FocusMate</h1>
+                <p class="text-slate-400 text-sm font-semibold tracking-wide">Your AI-Powered Deep Work Companion</p>
+            </div>
+            
+            <!-- SPEECH BUBBLE & ROBOT (STRICT VERTICAL STACKING) -->
+            <div class="flex flex-col items-center space-y-4 my-2">
+                <div class="bg-pink-100 text-slate-900 font-extrabold px-6 py-2 rounded-2xl shadow-md border border-pink-300 text-base">
+                    "Hi! Welcome to FocusMate!" ✨
                 </div>
                 
-                <!-- ANIMATED ROBOT -->
-                <div class="w-28 h-28 relative robot-float z-10" id="robot-avatar">
-                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-[0_10px_15px_rgba(192,132,252,0.4)]">
+                <div class="w-24 h-24 robot-float" id="robot-avatar">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-[0_8px_16px_rgba(192,132,252,0.4)]">
                         <rect x="42" y="10" width="16" height="6" rx="3" fill="#f472b6" />
                         <circle cx="50" cy="8" r="5" fill="#f472b6" />
                         <rect x="25" y="16" width="50" height="40" rx="12" fill="#a855f7" />
@@ -141,88 +139,86 @@ html_code = f"""
                 </div>
             </div>
 
-            <button onclick="triggerGasAndDive()" class="btn-gradient text-white font-extrabold py-4 px-10 rounded-2xl shadow-2xl text-lg hover:scale-105 transition-all z-20">
+            <button onclick="triggerGasAndDive()" class="btn-gradient text-white font-extrabold py-3.5 px-10 rounded-2xl shadow-xl hover:scale-105 transition-transform text-base">
                 Let's Dive In! 🚀
             </button>
         </div>
 
-        <!-- PAGE 2: INPUTS & STRATEGY OUTPUT -->
-        <div id="page-2" class="{'block' if start_page == '2' else 'hidden'} space-y-6">
-            <div class="flex justify-between items-center mb-2">
-                <button onclick="goToPage(1)" class="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1">
-                    ← Back to Welcome Page
+        <!-- PAGE 2: INPUTS & OUTPUTS -->
+        <div id="page-2" class="{'block' if start_page == '2' else 'hidden'} space-y-5">
+            <div class="flex justify-between items-center">
+                <button onclick="goToPage(1)" class="text-xs text-purple-400 font-semibold hover:underline">
+                    ← Back to Home
                 </button>
                 <span class="text-xs text-slate-500 font-bold">PAGE 2 OF 2</span>
             </div>
 
-            <div class="card-purple p-5">
-                <label class="block text-purple-300 font-bold mb-2 text-sm">🧠 1. Mind Dump / Current Feelings</label>
-                <input id="input-dump" type="text" value="{mind_dump_text}" placeholder="Describe how you feel or what you need to get done..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-purple-400 text-sm">
+            <div class="card-purple p-4">
+                <label class="block text-purple-300 font-bold mb-2 text-xs">🧠 1. Mind Dump / Current Feelings</label>
+                <input id="input-dump" type="text" value="{mind_dump_text}" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 text-slate-100 text-xs focus:outline-none focus:border-purple-400">
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="card-pink p-5">
-                    <label class="block text-pink-300 font-bold mb-2 text-sm">📚 2. Target Study Hours</label>
-                    <input id="input-hours" type="number" value="1" min="0.5" max="12" step="0.5" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-pink-400 text-sm">
+                <div class="card-pink p-4">
+                    <label class="block text-pink-300 font-bold mb-2 text-xs">📚 2. Target Study Hours</label>
+                    <input id="input-hours" type="number" value="1" min="0.5" max="12" step="0.5" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 text-slate-100 text-xs focus:outline-none focus:border-pink-400">
                 </div>
 
-                <div class="card-blue p-5">
-                    <div class="flex justify-between text-sky-300 font-bold mb-2 text-sm">
+                <div class="card-blue p-4">
+                    <div class="flex justify-between text-sky-300 font-bold mb-1 text-xs">
                         <span>😴 3. Sleep Quality Score (1–10)</span>
                         <span id="lbl-sleep">5</span>
                     </div>
-                    <input id="input-sleep" type="range" min="1" max="10" value="5" oninput="document.getElementById('lbl-sleep').innerText=this.value" class="w-full accent-sky-400 mt-2">
+                    <input id="input-sleep" type="range" min="1" max="10" value="5" oninput="document.getElementById('lbl-sleep').innerText=this.value" class="w-full accent-sky-400">
                 </div>
 
-                <div class="card-purple p-5">
-                    <div class="flex justify-between text-indigo-300 font-bold mb-2 text-sm">
+                <div class="card-purple p-4">
+                    <div class="flex justify-between text-indigo-300 font-bold mb-1 text-xs">
                         <span>🎯 4. Task Difficulty (1–10)</span>
                         <span id="lbl-diff">5</span>
                     </div>
-                    <input id="input-diff" type="range" min="1" max="10" value="5" oninput="document.getElementById('lbl-diff').innerText=this.value" class="w-full accent-indigo-400 mt-2">
+                    <input id="input-diff" type="range" min="1" max="10" value="5" oninput="document.getElementById('lbl-diff').innerText=this.value" class="w-full accent-indigo-400">
                 </div>
 
-                <div class="card-green p-5">
-                    <div class="flex justify-between text-emerald-300 font-bold mb-2 text-sm">
+                <div class="card-green p-4">
+                    <div class="flex justify-between text-emerald-300 font-bold mb-1 text-xs">
                         <span>⚡ 5. Current Energy Level (1–10)</span>
                         <span id="lbl-energy">5</span>
                     </div>
-                    <input id="input-energy" type="range" min="1" max="10" value="5" oninput="document.getElementById('lbl-energy').innerText=this.value" class="w-full accent-emerald-400 mt-2">
+                    <input id="input-energy" type="range" min="1" max="10" value="5" oninput="document.getElementById('lbl-energy').innerText=this.value" class="w-full accent-emerald-400">
                 </div>
             </div>
 
-            <button onclick="submitToML()" class="w-full btn-gradient text-white font-extrabold text-lg py-4 rounded-2xl shadow-xl transition-all my-2">
+            <button onclick="submitToML()" class="w-full btn-gradient text-white font-extrabold text-base py-3.5 rounded-2xl shadow-lg transition-transform hover:opacity-95">
                 ✨ Generate Focus Strategy ✨
             </button>
 
-            <div id="strategy-card" class="card-main p-8 space-y-6 {'block' if 'predict' in params else 'hidden'}">
-                <h3 class="text-2xl font-extrabold text-pink-300 flex items-center justify-center gap-2">
-                    <span>🫐</span> Your Custom Focus Strategy
-                </h3>
+            <div id="strategy-card" class="card-main p-6 space-y-4 {'block' if 'predict' in params else 'hidden'}">
+                <h3 class="text-xl font-extrabold text-pink-300 text-center">🫐 Your Custom Focus Strategy</h3>
 
-                <div class="grid grid-cols-3 gap-4 text-center">
-                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
-                        <span class="block text-slate-400 text-xs font-semibold mb-1">Focus Capacity</span>
-                        <span class="text-4xl font-extrabold text-purple-300">{capacity_val}%</span>
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                        <span class="block text-slate-400 text-[10px] font-semibold">Focus Capacity</span>
+                        <span class="text-2xl font-black text-purple-300">{capacity_val}%</span>
                     </div>
-                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
-                        <span class="block text-slate-400 text-xs font-semibold mb-1">Sprint Duration</span>
-                        <span class="text-4xl font-extrabold text-pink-400">{sprint_val} min</span>
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                        <span class="block text-slate-400 text-[10px] font-semibold">Sprint Duration</span>
+                        <span class="text-2xl font-black text-pink-400">{sprint_val} min</span>
                     </div>
-                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
-                        <span class="block text-slate-400 text-xs font-semibold mb-1">Rest Interval</span>
-                        <span class="text-4xl font-extrabold text-sky-400">{rest_val} min</span>
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                        <span class="block text-slate-400 text-[10px] font-semibold">Rest Interval</span>
+                        <span class="text-2xl font-black text-sky-400">{rest_val} min</span>
                     </div>
                 </div>
 
-                <div class="bg-slate-900/60 p-4 rounded-xl border-l-4 border-purple-400">
-                    <h4 class="font-bold text-purple-300 text-sm mb-1">🧠 Mind Dump Analysis</h4>
-                    <p class="text-slate-300 text-xs">"{mind_dump_text}" → Clear priority extracted and queued.</p>
+                <div class="bg-slate-900/60 p-3 rounded-lg border-l-4 border-purple-400">
+                    <h4 class="font-bold text-purple-300 text-xs mb-0.5">🧠 Mind Dump Analysis</h4>
+                    <p class="text-slate-300 text-[11px]">"{mind_dump_text}" → Prioritized and mapped.</p>
                 </div>
 
-                <div class="bg-slate-900/60 p-4 rounded-xl border-l-4 border-emerald-400">
-                    <h4 class="font-bold text-emerald-300 text-sm mb-1">🚀 Recommended Roadmap</h4>
-                    <p class="text-slate-300 text-xs">Start with low-friction tasks for 10 mins to build momentum.</p>
+                <div class="bg-slate-900/60 p-3 rounded-lg border-l-4 border-emerald-400">
+                    <h4 class="font-bold text-emerald-300 text-xs mb-0.5">🚀 Recommended Roadmap</h4>
+                    <p class="text-slate-300 text-[11px]">Start with low-friction tasks for 10 mins to build momentum.</p>
                 </div>
             </div>
         </div>
@@ -233,55 +229,54 @@ html_code = f"""
         function triggerGasAndDive() {{
             const robot = document.getElementById('robot-avatar');
             const rect = robot.getBoundingClientRect();
-            const colors = ['#f472b6', '#c084fc', '#e879f9', '#a855f7'];
+            const colors = ['#f472b6', '#c084fc', '#e879f9', '#38bdf8'];
 
-            // Spawn 35 glowing pink & purple smoke/gas particles from robot's thrusters
-            for (let i = 0; i < 35; i++) {{
-                const particle = document.createElement('div');
-                particle.className = 'gas-particle';
+            // Burst 40 smoke/gas clouds from the bottom of the robot
+            for (let i = 0; i < 40; i++) {{
+                const gas = document.createElement('div');
+                gas.className = 'gas-cloud';
+                const size = Math.random() * 30 + 15;
+                gas.style.width = size + 'px';
+                gas.style.height = size + 'px';
+                gas.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
                 
-                const size = Math.random() * 24 + 12;
-                particle.style.width = size + 'px';
-                particle.style.height = size + 'px';
-                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                
-                particle.style.left = (rect.left + rect.width / 2 - size / 2) + 'px';
-                particle.style.top = (rect.top + rect.height - 10) + 'px';
+                gas.style.left = (rect.left + rect.width / 2 - size / 2) + 'px';
+                gas.style.top = (rect.bottom - 10) + 'px';
 
-                // Trajectory: downward burst spreading outward
-                const tx = (Math.random() - 0.5) * 320;
-                const ty = Math.random() * 180 + 80;
-                particle.style.setProperty('--tx', tx + 'px');
-                particle.style.setProperty('--ty', ty + 'px');
+                const dx = (Math.random() - 0.5) * 350;
+                const dy = Math.random() * 200 + 50;
+                gas.style.setProperty('--dx', dx + 'px');
+                gas.style.setProperty('--dy', dy + 'px');
 
-                document.body.appendChild(particle);
-                setTimeout(() => particle.remove(), 1200);
+                document.body.appendChild(gas);
+                setTimeout(() => gas.remove(), 1200);
             }}
 
-            // Transition to page 2 after burst effect completes
             setTimeout(() => {{
                 goToPage(2);
-            }}, 600);
+            }}, 500);
         }}
 
-        function goToPage(pageNum) {{
-            if (pageNum === 2) {{
-                document.getElementById('page-1').classList.replace('block', 'hidden');
-                document.getElementById('page-2').classList.replace('hidden', 'block');
+        function goToPage(p) {{
+            const p1 = document.getElementById('page-1');
+            const p2 = document.getElementById('page-2');
+            if (p === 2) {{
+                p1.classList.replace('flex', 'hidden');
+                p2.classList.replace('hidden', 'block');
             }} else {{
-                document.getElementById('page-2').classList.replace('block', 'hidden');
-                document.getElementById('page-1').classList.replace('hidden', 'block');
+                p2.classList.replace('block', 'hidden');
+                p1.classList.replace('hidden', 'flex');
             }}
         }}
 
         function submitToML() {{
-            const hours = document.getElementById('input-hours').value;
-            const sleep = document.getElementById('input-sleep').value;
-            const diff = document.getElementById('input-diff').value;
-            const energy = document.getElementById('input-energy').value;
-            const dump = encodeURIComponent(document.getElementById('input-dump').value || "I'm stressed, bored, feeling suffocated");
+            const h = document.getElementById('input-hours').value;
+            const s = document.getElementById('input-sleep').value;
+            const d = document.getElementById('input-diff').value;
+            const e = document.getElementById('input-energy').value;
+            const txt = encodeURIComponent(document.getElementById('input-dump').value || "I'm stressed, bored");
 
-            window.parent.location.href = `?predict=true&page=2&hours=${{hours}}&sleep=${{sleep}}&diff=${{diff}}&energy=${{energy}}&dump=${{dump}}`;
+            window.parent.location.href = `?predict=true&page=2&hours=${{h}}&sleep=${{s}}&diff=${{d}}&energy=${{e}}&dump=${{txt}}`;
         }}
     </script>
 </body>
